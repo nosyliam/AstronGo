@@ -87,7 +87,7 @@ func (n NumericRange) IsEmpty() bool { return n.ntype == NONE }
 
 func (n NumericType) dataToNumber(data []byte) (ok *Number, err error) {
 	if n.size != Sizetag_t(len(data)) {
-		return nil, errors.New("data provided to numeric value is different than datatype size")
+		return nil, errors.New("data provided to numeric value is different than type size")
 	}
 
 	switch n.dtype {

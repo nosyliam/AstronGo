@@ -1,20 +1,20 @@
 package dc
 
 import (
-	"fmt"
 	"errors"
+	"fmt"
 )
 
 type Struct struct {
 	DistributedType
 	file File
 
-	id uint
+	id   uint
 	name string
 
-	fields []Field
+	fields       []Field
 	fieldsByName map[string]Field
-	fieldsById map[uint]Field
+	fieldsById   map[uint]Field
 }
 
 func NewStruct(file File, name string) Struct {
@@ -47,7 +47,7 @@ func (s Struct) AddField(field Field) (err error) {
 	}
 
 	fieldName := field.GetName()
-	if len(field.GetName()) == 0 {
+	if len(fieldName) == 0 {
 		if fieldName == s.GetName() {
 			return errors.New("structures cannot have constructors")
 		}
@@ -63,7 +63,7 @@ func (s Struct) AddField(field Field) (err error) {
 	s.fieldsById[field.GetId()] = field
 	s.fields = append(s.fields, field)
 
-	if (s.HasFixedSize() || len(s.fields) == 1) {
+	if s.HasFixedSize() || len(s.fields) == 1 {
 		if field.GetType().HasFixedSize() {
 			s.size += field.GetType().GetSize()
 		} else {
@@ -74,8 +74,8 @@ func (s Struct) AddField(field Field) (err error) {
 }
 
 func (s Struct) GetName() string { return s.name }
-func (s Struct) GetId() uint { return s.id }
-func (s Struct) SetId(id uint) { s.id = id }
+func (s Struct) GetId() uint     { return s.id }
+func (s Struct) SetId(id uint)   { s.id = id }
 
 func (s Struct) GenerateHash(generator HashGenerator) {
 

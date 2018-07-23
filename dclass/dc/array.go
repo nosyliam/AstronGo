@@ -52,7 +52,7 @@ func (a ArrayType) HasRange() bool         { return a.arrayRange.IsEmpty() }
 func (a ArrayType) GetRange() NumericRange { return a.arrayRange }
 
 func (a ArrayType) GetDefaultValue() interface {} {
-	switch (a.dtype) {
+	switch a.dtype {
 	case T_ARRAY:
 	case T_BLOB:
 	case T_STRING:
