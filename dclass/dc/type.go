@@ -29,38 +29,31 @@ const (
 type Sizetag_t uint32
 
 type BaseType interface {
-	GetType() Type
-	GetDefaultValue() interface{}
+	Type() Type
+	DefaultValue() interface{}
 
 	HasRange() bool
-	WithinRange(data []byte, length uint64) bool
+	WithinRange([]byte, uint64) bool
 
 	HasFixedSize() bool
-	GetSize() Sizetag_t
+	Size() Sizetag_t
 
-	HasAlias() bool
-	GetAlias() string
-	SetAlias(string)
-
-	GenerateHash(generator HashGenerator)
+	GenerateHash(HashGenerator)
 }
 
 type DistributedType struct {
 	BaseType
-	dtype Type
+	dataType Type
 	size  Sizetag_t
 	alias string
 }
 
-func (d DistributedType) GetType() Type                               { return d.dtype }
+func (d DistributedType) Type() Type                                  { return d.dataType }
 func (d DistributedType) HasRange() bool                              { return false }
 func (d DistributedType) WithinRange(data []byte, length uint64) bool { return true }
 func (d DistributedType) HasFixedSize() bool                          { return d.size > 0 }
-func (d DistributedType) GetSize() Sizetag_t                          { return d.size }
-func (d DistributedType) HasAlias() bool                              { return len(d.alias) > 0 }
-func (d DistributedType) GetAlias() string                            { return d.alias }
-func (d DistributedType) SetAlias(alias string)                       { d.alias = alias }
-func (d DistributedType) GetDefaultValue() interface{} {
+func (d DistributedType) Size() Sizetag_t                             { return d.size }
+func (d DistributedType) DefaultValue() interface{} {
 	return ""
 }
 

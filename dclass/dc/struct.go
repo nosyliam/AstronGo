@@ -7,19 +7,18 @@ import (
 
 type Struct struct {
 	DistributedType
-	file File
 
-	id   uint
-	name string
+	Id   uint
+	Name string
 
 	fields       []Field
 	fieldsByName map[string]Field
 	fieldsById   map[uint]Field
 }
 
-func NewStruct(file File, name string) Struct {
-	s := Struct{file: file, name: name}
-	s.dtype = T_STRUCT
+func NewStruct(name string) Struct {
+	s := Struct{Name: name}
+	s.dataType = T_STRUCT
 	return s
 }
 
@@ -38,7 +37,7 @@ func (s Struct) GetFieldById(id uint) (ok *Field, err error) {
 }
 
 func (s Struct) AddField(field Field) (err error) {
-	if fs := field.GetStruct(); &fs != &s {
+	if fs := field.Struct(); &fs != &s {
 		return errors.New("different structures cannot share the same field")
 	}
 
@@ -46,9 +45,9 @@ func (s Struct) AddField(field Field) (err error) {
 		return errors.New("structures cannot contain molecular fields")
 	}
 
-	fieldName := field.GetName()
+	fieldName := field.Name()
 	if len(fieldName) == 0 {
-		if fieldName == s.GetName() {
+		if fieldName == s.Name {
 			return errors.New("structures cannot have constructors")
 		}
 
@@ -60,22 +59,18 @@ func (s Struct) AddField(field Field) (err error) {
 	}
 
 	// TODO: add field to file
-	s.fieldsById[field.GetId()] = field
+	s.fieldsById[field.Id()] = field
 	s.fields = append(s.fields, field)
 
 	if s.HasFixedSize() || len(s.fields) == 1 {
-		if field.GetType().HasFixedSize() {
-			s.size += field.GetType().GetSize()
+		if field.Type().HasFixedSize() {
+			s.size += field.Type().Size()
 		} else {
 			s.size = 0
 		}
 	}
 	return nil
 }
-
-func (s Struct) GetName() string { return s.name }
-func (s Struct) GetId() uint     { return s.id }
-func (s Struct) SetId(id uint)   { s.id = id }
 
 func (s Struct) GenerateHash(generator HashGenerator) {
 

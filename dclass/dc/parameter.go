@@ -6,21 +6,19 @@ import (
 )
 
 type Parameter struct {
-	method *Method
-	ptype BaseType
+	Type      BaseType
+	Name      string
+	TypeAlias string
 
-	name string
-	typeAlias string
-	defaultValue *interface{}
+	defaultValue interface{}
+	method       *Method
 }
 
-func NewParameter(ptype BaseType, name string) Parameter {
-	p := Parameter{ptype: ptype, name: name}
+func NewParameter(dataType BaseType, name string) Parameter {
+	p := Parameter{Type: dataType, Name: name}
 	return p
 }
 
-
-func (p Parameter) GetName() string { return p.name }
 func (p Parameter) SetName(name string) (err error) {
 	if p.method != nil {
 		if _, err := p.method.GetParameterByName(name); err != nil {
@@ -28,28 +26,27 @@ func (p Parameter) SetName(name string) (err error) {
 		}
 	}
 
-	p.name = name
+	p.Name = name
 	return nil
 }
 
-func (p Parameter) GetType() BaseType      { return p.ptype }
-func (p Parameter) SetType(ftype BaseType) (err error) {
-	if ftype.GetType() == T_METHOD {
+func (p Parameter) SetType(dataType BaseType) (err error) {
+	if dataType.Type() == T_METHOD {
 		return errors.New("parameters cannot have method types")
 	}
 
-	if _, ok := ftype.(Class); ok {
+	if _, ok := dataType.(Class); ok {
 		return errors.New("parameters cannot have class types")
 	}
 
-	p.ptype = ftype
+	p.Type = dataType
 	p.defaultValue = nil
 	return nil
 }
 
-func (p Parameter) HasDefaultValue() bool           { return p.defaultValue != nil }
-func (p Parameter) GetDefaultValue() interface{}    { return &p.defaultValue }
-func (p Parameter) SetDefaultValue(val interface{}) { p.defaultValue = &val }
-
-func (p Parameter) GetMethod() Method { return *p.method }
 func (p Parameter) SetMethod(method Method) { p.method = &method }
+func (p Parameter) Method() Method          { return *p.method }
+
+func (p Parameter) HasDefaultValue() bool           { return p.defaultValue != nil }
+func (p Parameter) SetDefaultValue(val interface{}) { p.defaultValue = &val }
+func (p Parameter) GetDefaultValue() interface{}    { return &p.defaultValue }
