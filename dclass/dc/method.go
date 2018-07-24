@@ -15,6 +15,9 @@ type Method struct {
 func NewMethod() Method {
 	m := Method{}
 	m.dataType = T_METHOD
+
+	m.parameters = make([]Parameter, 0)
+	m.parametersByName = make(map[string]Parameter, 0)
 	return m
 }
 

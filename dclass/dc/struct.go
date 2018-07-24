@@ -19,6 +19,10 @@ type Struct struct {
 func NewStruct(name string) Struct {
 	s := Struct{Name: name}
 	s.dataType = T_STRUCT
+
+	s.fields = make([]Field, 0)
+	s.fieldsByName = make(map[string]Field, 0)
+	s.fieldsById = make(map[uint]Field, 0)
 	return s
 }
 
