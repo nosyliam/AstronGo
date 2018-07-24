@@ -33,6 +33,7 @@ type AtomicField struct {
 
 func NewAtomicField(dataType BaseType, name string) Field {
 	f := AtomicField{fieldType: dataType, name: name}
+	f.keywords = make(map[string]struct{}, 0)
 	return f
 }
 

@@ -1,25 +1,27 @@
 package dc
 
-type KeywordList map[string]struct{}
+type KeywordList struct {
+	keywords map[string]struct{}
+}
 
 func (k KeywordList) AddKeyword(kw string) {
-	k[kw] = struct{}{}
+	k.keywords[kw] = struct{}{}
 }
 
 func (k KeywordList) HasKeyword(kw string) bool {
-	if _, ok := k[kw]; ok {
+	if _, ok := k.keywords[kw]; ok {
 		return true
 	}
 	return false
 }
 
 func (k KeywordList) HasMatchingKeywords(other KeywordList) bool {
-	if len(k) != len(other) {
+	if len(k.keywords) != len(other.keywords) {
 		return false
 	}
 
-	for key := range k {
-		if _, ok := other[key]; !ok {
+	for key := range k.keywords {
+		if _, ok := other.keywords[key]; !ok {
 			return false
 		}
 	}
@@ -28,8 +30,8 @@ func (k KeywordList) HasMatchingKeywords(other KeywordList) bool {
 }
 
 func (k KeywordList) Copy(other KeywordList) {
-	for key := range k {
-		k[key] = struct{}{}
+	for key := range k.keywords {
+		k.keywords[key] = struct{}{}
 	}
 }
 
