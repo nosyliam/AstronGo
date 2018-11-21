@@ -1,0 +1,756 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="BookmarkManager">
+    <bookmark url="file://$PROJECT_DIR$/dclass/parse/grammar.go" line="137" />
+    <bookmark url="file://$PROJECT_DIR$/dclass/dc/file.go" line="42" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="f6337163-8d31-42cb-a1f0-0625bad660b3" name="Default" comment="">
+      <change afterPath="$PROJECT_DIR$/dclass/parse/grammar.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/dclass/parse/parse_test.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dclass/dc/class.go" beforeDir="false" afterPath="$PROJECT_DIR$/dclass/dc/class.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dclass/dc/field.go" beforeDir="false" afterPath="$PROJECT_DIR$/dclass/dc/field.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dclass/dc/file.go" beforeDir="false" afterPath="$PROJECT_DIR$/dclass/dc/file.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dclass/dc/method.go" beforeDir="false" afterPath="$PROJECT_DIR$/dclass/dc/method.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dclass/dc/number.go" beforeDir="false" afterPath="$PROJECT_DIR$/dclass/dc/number.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dclass/dc/parameter.go" beforeDir="false" afterPath="$PROJECT_DIR$/dclass/dc/parameter.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dclass/dc/struct.go" beforeDir="false" afterPath="$PROJECT_DIR$/dclass/dc/struct.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dclass/dc/type.go" beforeDir="false" afterPath="$PROJECT_DIR$/dclass/dc/type.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dclass/parse/parse.go" beforeDir="false" afterPath="$PROJECT_DIR$/dclass/parse/parse.go" afterDir="false" />
+    </list>
+    <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FUSProjectUsageTrigger">
+    <session id="1418480731">
+      <usages-collector id="statistics.lifecycle.project">
+        <counts>
+          <entry key="project.closed" value="1" />
+          <entry key="project.open.time.2" value="1" />
+          <entry key="project.opened" value="1" />
+        </counts>
+      </usages-collector>
+      <usages-collector id="statistics.file.extensions.open">
+        <counts>
+          <entry key="go" value="3" />
+        </counts>
+      </usages-collector>
+      <usages-collector id="statistics.file.types.open">
+        <counts>
+          <entry key="Go" value="3" />
+        </counts>
+      </usages-collector>
+      <usages-collector id="statistics.file.extensions.edit">
+        <counts>
+          <entry key="go" value="4" />
+        </counts>
+      </usages-collector>
+      <usages-collector id="statistics.file.types.edit">
+        <counts>
+          <entry key="Go" value="4" />
+        </counts>
+      </usages-collector>
+    </session>
+    <session id="-324516735">
+      <usages-collector id="statistics.lifecycle.project">
+        <counts>
+          <entry key="project.closed" value="1" />
+          <entry key="project.open.time.2" value="1" />
+          <entry key="project.open.time.3" value="1" />
+          <entry key="project.opened" value="2" />
+        </counts>
+      </usages-collector>
+      <usages-collector id="statistics.file.extensions.edit">
+        <counts>
+          <entry key="dc" value="75" />
+          <entry key="go" value="2713" />
+          <entry key="txt" value="6" />
+        </counts>
+      </usages-collector>
+      <usages-collector id="statistics.file.types.edit">
+        <counts>
+          <entry key="Go" value="2713" />
+          <entry key="PLAIN_TEXT" value="81" />
+        </counts>
+      </usages-collector>
+      <usages-collector id="statistics.file.extensions.open">
+        <counts>
+          <entry key="cpp" value="13" />
+          <entry key="dc" value="3" />
+          <entry key="go" value="27" />
+          <entry key="h" value="2" />
+          <entry key="ipp" value="2" />
+          <entry key="lpp" value="1" />
+          <entry key="yml" value="1" />
+          <entry key="ypp" value="1" />
+        </counts>
+      </usages-collector>
+      <usages-collector id="statistics.file.types.open">
+        <counts>
+          <entry key="C++" value="15" />
+          <entry key="Go" value="27" />
+          <entry key="PLAIN_TEXT" value="7" />
+          <entry key="YAML" value="1" />
+        </counts>
+      </usages-collector>
+    </session>
+  </component>
+  <component name="FileEditorManager">
+    <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/dclass/dc/number.go">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="1088">
+              <caret line="174" column="12" selection-start-line="174" selection-start-column="12" selection-end-line="174" selection-end-column="12" />
+              <folding>
+                <element signature="e#12#59#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/dclass/dc/parameter.go">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="498">
+              <caret line="36" lean-forward="true" selection-start-line="36" selection-end-line="36" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$USER_HOME$/Documents/Astron/src/dclass/file/parser.cpp">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="32165">
+              <caret line="3704" column="22" lean-forward="true" selection-start-line="3704" selection-start-column="22" selection-end-line="3704" selection-end-column="22" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$USER_HOME$/Documents/Astron/src/dclass/file/parser.ypp">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="-3351">
+              <caret line="16" selection-start-line="16" selection-end-line="16" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$USER_HOME$/Documents/Astron/src/dclass/dc/File.h">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="1071">
+              <caret line="77" lean-forward="true" selection-start-line="77" selection-end-line="77" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$USER_HOME$/Documents/Astron/src/dclass/dc/File.cpp">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="544">
+              <caret line="149" column="32" lean-forward="true" selection-start-line="149" selection-start-column="32" selection-end-line="149" selection-end-column="32" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/dclass/dc/file.go">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="1025">
+              <caret line="61" lean-forward="true" selection-start-line="61" selection-end-line="61" />
+              <folding>
+                <element signature="e#12#59#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/dclass/dc/keywords.go">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="425">
+              <caret line="25" column="9" lean-forward="true" selection-start-line="23" selection-start-column="8" selection-end-line="25" selection-end-column="9" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/dclass/dc/molecular.go">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="51">
+              <caret line="3" column="9" selection-start-line="3" selection-start-column="9" selection-end-line="3" selection-end-column="9" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+    </leaf>
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Go File" />
+      </list>
+    </option>
+  </component>
+  <component name="FindInProjectRecents">
+    <findStrings>
+      <find>class_parents</find>
+      <find>field_by_name</find>
+      <find>field_by_i</find>
+      <find>base_fields</find>
+      <find>divisor</find>
+      <find>class_inheritance</find>
+      <find>KW_DCLASS</find>
+      <find>mole</find>
+      <find>molecular</find>
+      <find>blob</find>
+      <find>class</find>
+      <find>unpack_field</find>
+      <find>tell</find>
+      <find>object_</find>
+      <find>set_fie</find>
+      <find>save_field</find>
+      <find>friendId</find>
+      <find>isonshar</find>
+      <find>handle_one_get</find>
+      <find>setstate</find>
+      <find>clubcolor</find>
+      <find>distributedmover</find>
+      <find>pettrait</find>
+      <find>keywordlist</find>
+      <find>//</find>
+      <find>get_num_class</find>
+      <find>get_import</find>
+      <find>ge</find>
+      <find>get_num_keyw</find>
+      <find>get_class_by_id</find>
+    </findStrings>
+    <dirStrings>
+      <dir>C:\Users\nines\Documents\GitHub\Astron\src\dclass\dc</dir>
+      <dir>C:\Users\nines\Documents\GitHub\Astron\src\dclass</dir>
+      <dir>C:\Users\nines\Documents\GitHub\Astron\src</dir>
+      <dir>C:\Users\nines\Documents\GitHub\Astron</dir>
+      <dir>C:\Users\liamm\Documents\Astron</dir>
+    </dirStrings>
+  </component>
+  <component name="GOROOT" path="C:/Go" />
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="IdeDocumentHistory">
+    <option name="CHANGED_PATHS">
+      <list>
+        <option value="$PROJECT_DIR$/datagram/datagram.go" />
+        <option value="$PROJECT_DIR$/utill/datagram.go" />
+        <option value="$PROJECT_DIR$/util/uint128.go" />
+        <option value="$PROJECT_DIR$/core/global.go" />
+        <option value="$PROJECT_DIR$/dclass/dc/hash.go" />
+        <option value="$PROJECT_DIR$/util/types.go" />
+        <option value="$PROJECT_DIR$/dclass/dc/defaults.go" />
+        <option value="$PROJECT_DIR$/util/datagram.go" />
+        <option value="$USER_HOME$/Documents/GitHub/Astron/src/dclass/dc/ArrayType.cpp" />
+        <option value="$PROJECT_DIR$/dclass/dc/molecular.go" />
+        <option value="$PROJECT_DIR$/dclass/dc/array.go" />
+        <option value="$PROJECT_DIR$/dclass/dc/keywords.go" />
+        <option value="$PROJECT_DIR$/dclass/parse/parser.y" />
+        <option value="$PROJECT_DIR$/dclass/parse/astrongo_suite_test.go" />
+        <option value="$PROJECT_DIR$/astrongo_test.go" />
+        <option value="$PROJECT_DIR$/dclass/parse/parser_suite_test.go" />
+        <option value="$PROJECT_DIR$/dclass/dc/type.go" />
+        <option value="$PROJECT_DIR$/dclass/dc/parameter.go" />
+        <option value="$PROJECT_DIR$/dclass/dc/struct.go" />
+        <option value="$PROJECT_DIR$/dclass/dc/field.go" />
+        <option value="$PROJECT_DIR$/dclass/dc/number.go" />
+        <option value="$PROJECT_DIR$/dclass/dc/method.go" />
+        <option value="$PROJECT_DIR$/dclass/parse/parser.go" />
+        <option value="$PROJECT_DIR$/dclass/dc/class.go" />
+        <option value="$PROJECT_DIR$/dclass/parse/parse.go" />
+        <option value="$PROJECT_DIR$/dclass/parse/parse_test.go" />
+        <option value="$PROJECT_DIR$/dclass/parse/grammar.go" />
+        <option value="$USER_HOME$/Documents/Astron/test/files/test.dc" />
+        <option value="$PROJECT_DIR$/dclass/parse/test.dc" />
+        <option value="$PROJECT_DIR$/dclass/dc/file.go" />
+      </list>
+    </option>
+  </component>
+  <component name="JsBuildToolGruntFileManager" detection-done="true" sorting="DEFINITION_ORDER" />
+  <component name="JsBuildToolPackageJson" detection-done="true" sorting="DEFINITION_ORDER" />
+  <component name="JsGulpfileManager">
+    <detection-done>true</detection-done>
+    <sorting>DEFINITION_ORDER</sorting>
+  </component>
+  <component name="ProjectFrameBounds" extendedState="6">
+    <option name="x" value="-10" />
+    <option name="y" value="-10" />
+    <option name="width" value="1185" />
+    <option name="height" value="885" />
+  </component>
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+  <component name="ProjectView">
+    <navigator proportions="" version="1">
+      <foldersAlwaysOnTop value="true" />
+    </navigator>
+    <panes>
+      <pane id="Scope" />
+      <pane id="ProjectPane">
+        <subPane>
+          <expand>
+            <path>
+              <item name="astrongo" type="b2602c69:ProjectViewProjectNode" />
+              <item name="astrongo" type="47feb1d3:ProjectViewModuleNode" />
+            </path>
+            <path>
+              <item name="astrongo" type="b2602c69:ProjectViewProjectNode" />
+              <item name="astrongo" type="47feb1d3:ProjectViewModuleNode" />
+              <item name="Astron" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="astrongo" type="b2602c69:ProjectViewProjectNode" />
+              <item name="astrongo" type="47feb1d3:ProjectViewModuleNode" />
+              <item name="Astron" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="astrongo" type="b2602c69:ProjectViewProjectNode" />
+              <item name="astrongo" type="47feb1d3:ProjectViewModuleNode" />
+              <item name="Astron" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+              <item name="dclass" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="astrongo" type="b2602c69:ProjectViewProjectNode" />
+              <item name="astrongo" type="47feb1d3:ProjectViewModuleNode" />
+              <item name="Astron" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+              <item name="dclass" type="462c0819:PsiDirectoryNode" />
+              <item name="dc" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="astrongo" type="b2602c69:ProjectViewProjectNode" />
+              <item name="astrongo" type="47feb1d3:ProjectViewModuleNode" />
+              <item name="astrongo" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="astrongo" type="b2602c69:ProjectViewProjectNode" />
+              <item name="astrongo" type="47feb1d3:ProjectViewModuleNode" />
+              <item name="astrongo" type="462c0819:PsiDirectoryNode" />
+              <item name="dclass" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="astrongo" type="b2602c69:ProjectViewProjectNode" />
+              <item name="astrongo" type="47feb1d3:ProjectViewModuleNode" />
+              <item name="astrongo" type="462c0819:PsiDirectoryNode" />
+              <item name="dclass" type="462c0819:PsiDirectoryNode" />
+              <item name="dc" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="astrongo" type="b2602c69:ProjectViewProjectNode" />
+              <item name="astrongo" type="47feb1d3:ProjectViewModuleNode" />
+              <item name="astrongo" type="462c0819:PsiDirectoryNode" />
+              <item name="dclass" type="462c0819:PsiDirectoryNode" />
+              <item name="parse" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="astrongo" type="b2602c69:ProjectViewProjectNode" />
+              <item name="External Libraries" type="cb654da1:ExternalLibrariesNode" />
+            </path>
+          </expand>
+          <select />
+        </subPane>
+      </pane>
+    </panes>
+  </component>
+  <component name="PropertiesComponent">
+    <property name="DefaultGoTemplateProperty" value="Go File" />
+    <property name="configurable.Global.GOPATH.is.expanded" value="false" />
+    <property name="configurable.Module.GOPATH.is.expanded" value="false" />
+    <property name="configurable.Project.GOPATH.is.expanded" value="false" />
+    <property name="go.gopath.indexing.explicitly.defined" value="true" />
+    <property name="last_opened_file_path" value="$USER_HOME$/Documents/Astron" />
+    <property name="nodejs_interpreter_path.stuck_in_default_project" value="undefined stuck path" />
+    <property name="nodejs_npm_path_reset_for_default_project" value="true" />
+    <property name="settings.editor.selected.configurable" value="goland.project.structure" />
+  </component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\liamm\go\src\astrongo\dclass\parse" />
+    </key>
+  </component>
+  <component name="RunDashboard">
+    <option name="ruleStates">
+      <list>
+        <RuleState>
+          <option name="name" value="ConfigurationTypeDashboardGroupingRule" />
+        </RuleState>
+        <RuleState>
+          <option name="name" value="StatusDashboardGroupingRule" />
+        </RuleState>
+      </list>
+    </option>
+  </component>
+  <component name="RunManager">
+    <configuration name="Parser" type="GoTestRunConfiguration" factoryName="Go Test">
+      <module name="astrongo" />
+      <working_directory value="$PROJECT_DIR$/" />
+      <go_parameters value="-i" />
+      <framework value="gotest" />
+      <kind value="PACKAGE" />
+      <package value="astrongo/dclass/parse" />
+      <directory value="$PROJECT_DIR$/" />
+      <filePath value="$PROJECT_DIR$/" />
+      <method v="2" />
+    </configuration>
+  </component>
+  <component name="TestHistory">
+    <history-entry file="Parser - 2018.11.20 at 18h 43m 47s.xml">
+      <configuration name="Parser" configurationId="GoTestRunConfiguration" />
+    </history-entry>
+    <history-entry file="Parser - 2018.11.20 at 18h 43m 57s.xml">
+      <configuration name="Parser" configurationId="GoTestRunConfiguration" />
+    </history-entry>
+    <history-entry file="Parser - 2018.11.20 at 18h 44m 10s.xml">
+      <configuration name="Parser" configurationId="GoTestRunConfiguration" />
+    </history-entry>
+    <history-entry file="Parser - 2018.11.20 at 18h 44m 53s.xml">
+      <configuration name="Parser" configurationId="GoTestRunConfiguration" />
+    </history-entry>
+    <history-entry file="Parser - 2018.11.20 at 18h 45m 26s.xml">
+      <configuration name="Parser" configurationId="GoTestRunConfiguration" />
+    </history-entry>
+    <history-entry file="Parser - 2018.11.20 at 18h 46m 52s.xml">
+      <configuration name="Parser" configurationId="GoTestRunConfiguration" />
+    </history-entry>
+    <history-entry file="Parser - 2018.11.20 at 18h 50m 09s.xml">
+      <configuration name="Parser" configurationId="GoTestRunConfiguration" />
+    </history-entry>
+    <history-entry file="Parser - 2018.11.20 at 18h 51m 58s.xml">
+      <configuration name="Parser" configurationId="GoTestRunConfiguration" />
+    </history-entry>
+    <history-entry file="Parser - 2018.11.20 at 18h 55m 17s.xml">
+      <configuration name="Parser" configurationId="GoTestRunConfiguration" />
+    </history-entry>
+    <history-entry file="Parser - 2018.11.20 at 18h 55m 33s.xml">
+      <configuration name="Parser" configurationId="GoTestRunConfiguration" />
+    </history-entry>
+  </component>
+  <component name="ToolWindowManager">
+    <frame x="-8" y="-8" width="1936" height="1056" extended-state="6" />
+    <editor active="true" />
+    <layout>
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.1401919" />
+      <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
+      <window_info id="Favorites" order="2" side_tool="true" />
+      <window_info anchor="bottom" id="Message" order="0" />
+      <window_info anchor="bottom" id="Find" order="1" />
+      <window_info anchor="bottom" id="Run" order="2" weight="0.22968581" />
+      <window_info anchor="bottom" id="Debug" order="3" weight="0.3997833" />
+      <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
+      <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
+      <window_info anchor="bottom" id="TODO" order="6" />
+      <window_info anchor="bottom" id="Database Changes" order="7" show_stripe_button="false" />
+      <window_info anchor="bottom" id="Terminal" order="8" />
+      <window_info anchor="bottom" id="Event Log" order="9" side_tool="true" weight="0.32831737" />
+      <window_info anchor="bottom" id="Version Control" order="10" />
+      <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
+      <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
+      <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
+      <window_info anchor="right" id="Database" order="3" />
+    </layout>
+    <layout-to-restore>
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.1401919" />
+      <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
+      <window_info id="Favorites" order="2" side_tool="true" />
+      <window_info anchor="bottom" id="Message" order="0" />
+      <window_info anchor="bottom" id="Find" order="1" />
+      <window_info anchor="bottom" id="Run" order="2" visible="true" weight="0.22968581" />
+      <window_info anchor="bottom" id="Debug" order="3" weight="0.3997833" />
+      <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
+      <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
+      <window_info anchor="bottom" id="TODO" order="6" />
+      <window_info anchor="bottom" id="Database Changes" order="7" show_stripe_button="false" />
+      <window_info anchor="bottom" id="Terminal" order="8" />
+      <window_info anchor="bottom" id="Event Log" order="9" side_tool="true" weight="0.32831737" />
+      <window_info anchor="bottom" id="Version Control" order="10" />
+      <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
+      <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
+      <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
+      <window_info anchor="right" id="Database" order="3" />
+    </layout-to-restore>
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="1" />
+  </component>
+  <component name="VcsContentAnnotationSettings">
+    <option name="myLimit" value="2678400000" />
+  </component>
+  <component name="editorHistoryManager">
+    <entry file="file://$USER_HOME$/Documents/GitHub/Astron/src/dclass/dc/File.cpp" />
+    <entry file="file://$USER_HOME$/Documents/GitHub/Astron/src/dclass/dc/File.h" />
+    <entry file="file://$USER_HOME$/Documents/GitHub/Astron/src/dclass/dc/ArrayType.h" />
+    <entry file="file://$USER_HOME$/Documents/GitHub/Astron/src/dclass/dc/ArrayType.cpp" />
+    <entry file="file://$USER_HOME$/Documents/GitHub/Astron/src/dclass/dc/Class.h" />
+    <entry file="file://$USER_HOME$/Documents/GitHub/Astron/src/dclass/dc/Struct.cpp" />
+    <entry file="file://$USER_HOME$/Documents/GitHub/Astron/src/dclass/dc/Method.cpp" />
+    <entry file="file://$USER_HOME$/Documents/GitHub/Astron/src/dclass/dc/Field.ipp" />
+    <entry file="file://$USER_HOME$/Documents/GitHub/Astron/src/database/SociSQLDatabase.cpp" />
+    <entry file="file://$USER_HOME$/Documents/GitHub/Astron/src/database/YAMLDatabase.cpp" />
+    <entry file="file://$USER_HOME$/Documents/GitHub/Astron/src/dclass/dc/Field.cpp" />
+    <entry file="file://$USER_HOME$/Documents/GitHub/Astron/src/dclass/dc/Class.cpp" />
+    <entry file="file://$USER_HOME$/Documents/GitHub/Astron/src/dclass/dc/MolecularField.cpp" />
+    <entry file="file://$PROJECT_DIR$/dclass/parse/parser.y" />
+    <entry file="file://$USER_HOME$/Documents/GitHub/Astron/docs/dclass-ebnf.md" />
+    <entry file="file://$PROJECT_DIR$/astrongo_test.go" />
+    <entry file="file://$USER_HOME$/Documents/Astron/src/dclass/file/lexer.cpp">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-42302" />
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/dclass/dc/array.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="918">
+          <caret line="54" column="18" selection-start-line="54" selection-start-column="18" selection-end-line="54" selection-end-column="18" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Documents/Astron/src/dclass/file/read.cpp">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="323">
+          <caret line="19" column="39" lean-forward="true" selection-start-line="19" selection-start-column="39" selection-end-line="19" selection-end-column="39" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/util/types.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="102">
+          <caret line="6" selection-start-line="6" selection-end-line="6" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/dclass/dc/hash.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="34">
+          <caret line="2" column="28" selection-start-line="2" selection-start-column="28" selection-end-line="2" selection-end-column="28" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Documents/Astron/src/dclass/dc/DistributedType.cpp">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$USER_HOME$/Documents/Astron/src/dclass/dc/Method.cpp">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-754" />
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/dclass/dc/type.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="504">
+          <caret line="45" selection-start-line="45" selection-end-line="45" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/dclass/dc/struct.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="311">
+          <caret line="51" column="27" selection-start-line="51" selection-start-column="27" selection-end-line="51" selection-end-column="27" />
+          <folding>
+            <element signature="e#12#39#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Documents/Astron/src/util/DatagramIterator.h">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="290">
+          <caret line="450" column="11" selection-start-line="450" selection-start-column="7" selection-end-line="450" selection-end-column="11" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Documents/Astron/src/stateserver/StateServer.cpp">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1176">
+          <caret line="85" column="35" selection-start-line="85" selection-start-column="28" selection-end-line="85" selection-end-column="35" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Documents/Astron/src/dclass/dc/Class.cpp">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-3576" />
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/dclass/dc/field.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-37">
+          <caret line="28" lean-forward="true" selection-start-line="28" selection-end-line="28" />
+          <folding>
+            <element signature="e#12#39#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Documents/Astron/src/stateserver/DistributedObject.cpp">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1157">
+          <caret line="408" column="38" selection-start-line="408" selection-start-column="24" selection-end-line="408" selection-end-column="38" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/dclass/parse/parse_test.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="51">
+          <caret line="3" column="4" selection-start-line="3" selection-start-column="4" selection-end-line="3" selection-end-column="4" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/dclass/parse/grammar.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="238">
+          <caret line="17" column="21" selection-start-line="17" selection-start-column="21" selection-end-line="17" selection-end-column="21" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Documents/Astron/src/dclass/file/lexer.lpp">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-6783" />
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Documents/Astron/src/dclass/dc/KeywordList.cpp">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-714" />
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/dclass/parse/parse.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="238">
+          <caret line="14" column="19" lean-forward="true" selection-start-line="14" selection-start-column="19" selection-end-line="14" selection-end-column="19" />
+          <folding>
+            <element signature="e#15#81#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/dclass/parse/test.dc">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-243">
+          <caret line="41" column="32" lean-forward="true" selection-start-line="41" selection-start-column="32" selection-end-line="41" selection-end-column="32" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Documents/Astron/test/files/test.dc">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="34">
+          <caret line="2" column="29" lean-forward="true" selection-start-line="2" selection-start-column="29" selection-end-line="2" selection-end-column="29" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Documents/Astron/src/dclass/dc/Field.ipp">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-51" />
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Documents/Astron/src/dclass/dc/File.ipp">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-765" />
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/dclass/dc/method.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="510">
+          <caret line="30" column="26" selection-start-line="30" selection-start-column="26" selection-end-line="30" selection-end-column="26" />
+          <folding>
+            <element signature="e#12#39#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Documents/Astron/src/dclass/file/parser.ypp">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-3351">
+          <caret line="16" selection-start-line="16" selection-end-line="16" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Documents/Astron/src/dclass/file/parser.cpp">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="32165">
+          <caret line="3704" column="22" lean-forward="true" selection-start-line="3704" selection-start-column="22" selection-end-line="3704" selection-end-column="22" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/dclass/dc/molecular.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="51">
+          <caret line="3" column="9" selection-start-line="3" selection-start-column="9" selection-end-line="3" selection-end-column="9" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/dclass/dc/number.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1088">
+          <caret line="174" column="12" selection-start-line="174" selection-start-column="12" selection-end-line="174" selection-end-column="12" />
+          <folding>
+            <element signature="e#12#59#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/dclass/dc/parameter.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="498">
+          <caret line="36" lean-forward="true" selection-start-line="36" selection-end-line="36" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/dclass/dc/class.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="209">
+          <caret line="25" column="1" lean-forward="true" selection-start-line="25" selection-start-column="1" selection-end-line="25" selection-end-column="1" />
+          <folding>
+            <element signature="e#12#39#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Documents/Astron/.travis.yml">
+      <provider selected="true" editor-type-id="text-editor">
+        <state>
+          <caret column="6" selection-start-column="6" selection-end-column="6" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Documents/Astron/src/dclass/dc/File.h">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1071">
+          <caret line="77" lean-forward="true" selection-start-line="77" selection-end-line="77" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Documents/Astron/src/dclass/dc/File.cpp">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="544">
+          <caret line="149" column="32" lean-forward="true" selection-start-line="149" selection-start-column="32" selection-end-line="149" selection-end-column="32" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/dclass/dc/keywords.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="425">
+          <caret line="25" column="9" lean-forward="true" selection-start-line="23" selection-start-column="8" selection-end-line="25" selection-end-column="9" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/dclass/dc/file.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1025">
+          <caret line="61" lean-forward="true" selection-start-line="61" selection-end-line="61" />
+          <folding>
+            <element signature="e#12#59#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+  </component>
+</project>
