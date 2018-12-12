@@ -1,28 +1,23 @@
 package dc
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+)
 
 type Class struct {
 	Struct
 	file File
 
-	constructor      Field
-	baseFields       []Field
-	baseFieldsByName map[string]Field
-
-	parents  []Class
-	children []Class
+	baseFields map[string]Field
 }
 
 func NewClass(file File, name string) Class {
 	c := Class{file: file}
 	c.dataType = T_STRUCT
-	c.Name = name
+	c.name = name
 
-	c.baseFields = make([]Field, 0)
-	c.baseFieldsByName = make(map[string]Field, 0)
-	c.parents = make([]Class, 0)
-	c.children = make([]Class, 0)
+	c.baseFields = make(map[string]Field, 0)
 	return c
 }
 
@@ -39,7 +34,8 @@ func (c Class) AddField(field Field) (err error) {
 		return errors.New("class field names cannot be empty")
 	}
 
-	if field.Name() == c.Name {
+	fieldName := field.Name()
+	if fieldName == c.name {
 		if _, ok := field.(MolecularField); ok {
 			return errors.New("constructors cannot be molecular fields")
 		}
@@ -49,18 +45,17 @@ func (c Class) AddField(field Field) (err error) {
 		}
 	}
 
+	if _, ok := c.baseFields[fieldName]; ok {
+		return errors.New(fmt.Sprintf("field with name `%s` already exists", fieldName))
+	}
+
+	// TODO: add to file
+	c.fieldsById[field.Id()] = field
+	c.fieldsByName[fieldName] = field
+	c.baseFields[fieldName] = field
+
+
+
 	return nil
-}
-
-func (c Class) addChild(class Class) {
-
-}
-
-func (c Class) addInheritedField(parent Class, field Field) {
-
-}
-
-func (c Class) shadowField(field Field) {
-
 }
 

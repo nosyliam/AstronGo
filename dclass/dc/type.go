@@ -43,6 +43,7 @@ type BaseType interface {
 
 type DistributedType struct {
 	BaseType
+
 	dataType Type
 	size  Sizetag_t
 	alias string

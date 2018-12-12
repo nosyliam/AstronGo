@@ -6,18 +6,18 @@ import (
 )
 
 type Parameter struct {
-	Type      BaseType
-	Name      string
-	TypeAlias string
+	dataType      BaseType
+	name      string
+	typeAlias string
 
 	defaultValue interface{}
 	method       *Method
 }
-
 func NewParameter(dataType BaseType, name string) Parameter {
-	p := Parameter{Type: dataType, Name: name}
+	p := Parameter{dataType: dataType, name: name}
 	return p
 }
+
 
 func (p Parameter) SetName(name string) (err error) {
 	if p.method != nil {
@@ -26,7 +26,7 @@ func (p Parameter) SetName(name string) (err error) {
 		}
 	}
 
-	p.Name = name
+	p.name = name
 	return nil
 }
 
@@ -39,12 +39,12 @@ func (p Parameter) SetType(dataType BaseType) (err error) {
 		return errors.New("parameters cannot have class types")
 	}
 
-	p.Type = dataType
+	p.dataType = dataType
 	p.defaultValue = nil
 	return nil
 }
 
-func (p Parameter) SetMethod(method Method) { p.method = &method }
+func (p Parameter) SetMethod(method *Method) { p.method = method }
 func (p Parameter) Method() Method          { return *p.method }
 
 func (p Parameter) HasDefaultValue() bool           { return p.defaultValue != nil }

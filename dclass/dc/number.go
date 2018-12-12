@@ -16,7 +16,6 @@ const (
 )
 
 type Number struct {
-	// TODO: implement psuedo-union
 	integer  int64
 	uinteger uint64
 	float    float64
@@ -25,9 +24,9 @@ type Number struct {
 type NumericType struct {
 	DistributedType
 
-	Divisor uint32
-	Modulus float64
-	Range   NumericRange
+	divisor uint32
+	modulus float64
+	nRange   NumericRange
 
 	calculatedRange       NumericRange
 	calculatedModulus     Number
@@ -41,7 +40,7 @@ type NumericRange struct {
 }
 
 func NewNumber(ntype Type) NumericType {
-	n := NumericType{Divisor: 1, calculatedRange: NumericRange{
+	n := NumericType{divisor: 1, calculatedRange: NumericRange{
 		min: Number{float: math.Inf(1)},
 		max: Number{float: math.Inf(-1)},
 	}}
@@ -64,7 +63,7 @@ func NewNumber(ntype Type) NumericType {
 	case T_FLOAT64:
 		n.size = 8
 	default:
-		n.dtype = T_INVALID
+		n.dataType = T_INVALID
 	}
 
 	return n
@@ -124,12 +123,12 @@ func (n NumericType) SetDivisor(divisor uint32) (err error) {
 		return errors.New("invalid divisor passed to NumericType")
 	}
 
-	n.Divisor = divisor
-	if !n.Range.IsEmpty() {
-		n.SetRange(n.Range)
+	n.divisor = divisor
+	if !n.nRange.IsEmpty() {
+		n.SetRange(n.nRange)
 	}
-	if n.Modulus != 0 {
-		n.SetModulus(n.Modulus)
+	if n.modulus != 0 {
+		n.SetModulus(n.modulus)
 	}
 
 	return nil
@@ -148,21 +147,25 @@ func (n NumericType) SetModulus(modulus float64) (err error) {
 			goto invalidModulus
 		}
 		n.calculatedModulus.uinteger = uint_mod
+		break
 	case T_UINT16:
 		if uint_mod < 1 || uint64(^uint16(0))+1 < uint_mod {
 			goto invalidModulus
 		}
 		n.calculatedModulus.uinteger = uint_mod
+		break
 	case T_UINT32:
 		if uint_mod < 1 || uint64(^uint32(0))+1 < uint_mod {
 			goto invalidModulus
 		}
 		n.calculatedModulus.uinteger = uint_mod
+		break
 	case T_UINT64:
 		if uint_mod < 1 {
 			goto invalidModulus
 		}
 		n.calculatedModulus.uinteger = uint_mod
+		break
 	case T_FLOAT32:
 	case T_FLOAT64:
 		n.calculatedModulus.float = modulus * float64(n.divisor)
@@ -171,58 +174,53 @@ func (n NumericType) SetModulus(modulus float64) (err error) {
 		goto invalidModulus
 	}
 
-	n.Modulus = modulus
+	n.modulus = modulus
 	return nil
 
 invalidModulus:
-	return errors.New("invalid modulus passed to NumericType")
+	return errors.New("invalid range for numeric type")
 }
 
 func (n NumericType) SetRange(rng NumericRange) (err error) {
-	n.Range = rng
+	n.nRange = rng
 	switch n.dataType {
 	case T_INT8:
 	case T_INT16:
 	case T_INT32:
 	case T_INT64:
-		{
-			min := int64(math.Floor(rng.min.float*float64(n.divisor) + 0.5))
-			max := int64(math.Floor(rng.max.float*float64(n.divisor) + 0.5))
-			n.calculatedRange.min = Number{integer: min}
-			n.calculatedRange.max = Number{integer: max}
-		}
+		min := int64(math.Floor(rng.min.float*float64(n.divisor) + 0.5))
+		max := int64(math.Floor(rng.max.float*float64(n.divisor) + 0.5))
+		n.calculatedRange.min = Number{integer: min}
+		n.calculatedRange.max = Number{integer: max}
+		break
 	case T_CHAR:
 	case T_UINT8:
 	case T_UINT16:
 	case T_UINT32:
 	case T_UINT64:
-		{
-			min := uint64(math.Floor(rng.min.float*float64(n.divisor) + 0.5))
-			max := uint64(math.Floor(rng.max.float*float64(n.divisor) + 0.5))
-			n.calculatedRange.min = Number{uinteger: min}
-			n.calculatedRange.max = Number{uinteger: max}
-		}
+		min := uint64(math.Floor(rng.min.float*float64(n.divisor) + 0.5))
+		max := uint64(math.Floor(rng.max.float*float64(n.divisor) + 0.5))
+		n.calculatedRange.min = Number{uinteger: min}
+		n.calculatedRange.max = Number{uinteger: max}
+		break
 	case T_FLOAT32:
 	case T_FLOAT64:
-		{
-			n.calculatedRange.min = Number{float: rng.min.float * float64(n.divisor)}
-			n.calculatedRange.max = Number{float: rng.max.float * float64(n.divisor)}
-		}
+		n.calculatedRange.min = Number{float: rng.min.float * float64(n.divisor)}
+		n.calculatedRange.max = Number{float: rng.max.float * float64(n.divisor)}
+		break
 	default:
-		{
-			return errors.New("invalid numeric type for range")
-		}
+		return errors.New("invalid range for numeric type")
 	}
 
 	return nil
 }
 
-func (n NumericType) WithinRange(data []byte, length uint64) (ok bool, err error) {
+func (n NumericType) WithinRange(data []byte, length uint64) bool {
 	encoded, err := n.dataToNumber(data)
 	if err != nil {
-		return false, errors.New("range check failed")
+		return false
 	}
-	return n.calculatedRange.Contains(*encoded), nil
+	return n.calculatedRange.Contains(*encoded)
 }
 
 func (n NumericType) DefaultValue() interface{} {

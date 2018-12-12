@@ -11,6 +11,7 @@ type Field interface {
 	Type() BaseType
 	Name() string
 	Id() uint
+	SetId(uint)
 
 	SetStruct(Struct)
 	Struct() Struct
@@ -24,8 +25,8 @@ type AtomicField struct {
 	KeywordList
 
 	fieldType BaseType
-	id   uint
-	name string
+	id        uint
+	name      string
 
 	defaultValue *interface{}
 	parentStruct *Struct
@@ -39,8 +40,8 @@ func NewAtomicField(dataType BaseType, name string) Field {
 
 func (f AtomicField) SetName(name string) (err error) {
 	if f.parentStruct != nil {
-		if _, err := f.parentStruct.GetFieldByName(name); err != nil {
-			return errors.New(fmt.Sprintf("field %s already exists in parent structure", name))
+		if _, ok := f.parentStruct.GetFieldByName(name); ok {
+			return errors.New(fmt.Sprintf("field %s already exists in parent struct", name))
 		}
 	}
 
@@ -49,8 +50,9 @@ func (f AtomicField) SetName(name string) (err error) {
 }
 
 func (f AtomicField) Type() BaseType { return f.fieldType }
-func (f AtomicField) Name() string { return f.name }
-func (f AtomicField) Id() uint { return f.id }
+func (f AtomicField) Name() string   { return f.name }
+func (f AtomicField) Id() uint       { return f.id }
+func (f AtomicField) SetId(id uint)  { f.id = id }
 
 func (f AtomicField) SetStruct(s Struct) { f.parentStruct = &s }
 func (f AtomicField) Struct() Struct     { return *f.parentStruct }

@@ -21,38 +21,38 @@ func NewArray(elem BaseType, sz NumericRange) ArrayType {
 	}
 
 	if elem.HasFixedSize() && a.arraySize > 0 {
-		a.dtype = T_ARRAY
-		a.size = Sizetag_t(uint(elem.GetSize()) * a.arraySize)
+		a.dataType = T_ARRAY
+		a.size = Sizetag_t(uint(elem.Size()) * a.arraySize)
 	} else {
-		a.dtype = T_VARARRAY
+		a.dataType = T_VARARRAY
 		a.size = 0
 	}
 
-	if elem.GetType() == T_CHAR {
-		if a.dtype == T_ARRAY {
-			a.dtype = T_STRING
+	if elem.Type() == T_CHAR {
+		if a.dataType == T_ARRAY {
+			a.dataType = T_STRING
 		} else {
-			a.dtype = T_VARSTRING
+			a.dataType = T_VARSTRING
 		}
-	} else if elem.GetType() == T_UINT8 {
-		if a.dtype == T_ARRAY {
-			a.dtype = T_BLOB
+	} else if elem.Type() == T_UINT8 {
+		if a.dataType == T_ARRAY {
+			a.dataType = T_BLOB
 		} else {
-			a.dtype = T_VARBLOB
+			a.dataType = T_VARBLOB
 		}
 	}
 
 	return a
 }
 
-func (a ArrayType) GetArraySize() uint       { return a.arraySize }
-func (a ArrayType) GetElementType() BaseType { return a.elemType }
+func (a ArrayType) ArraySize() uint       { return a.arraySize }
+func (a ArrayType) ElementType() BaseType { return a.elemType }
 
 func (a ArrayType) HasRange() bool         { return a.arrayRange.IsEmpty() }
-func (a ArrayType) GetRange() NumericRange { return a.arrayRange }
+func (a ArrayType) Range() NumericRange { return a.arrayRange }
 
-func (a ArrayType) GetDefaultValue() interface {} {
-	switch a.dtype {
+func (a ArrayType) DefaultValue() interface {} {
+	switch a.dataType {
 	case T_ARRAY:
 	case T_BLOB:
 	case T_STRING:

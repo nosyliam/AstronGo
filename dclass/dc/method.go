@@ -8,6 +8,8 @@ import (
 type Method struct {
 	DistributedType
 
+	constrained bool
+
 	parameters       []Parameter
 	parametersByName map[string]Parameter
 }
@@ -28,20 +30,20 @@ func (m Method) GetParameterByName(name string) (ok *Parameter, err error) {
 	return nil, errors.New(fmt.Sprintf("unable to index field `%s`", name))
 }
 func (m Method) AddParameter(param Parameter) (err error) {
-	if len(param.Name) == 0 {
-		if _, ok := m.parametersByName[param.Name]; ok {
-			return errors.New(fmt.Sprintf("parameter with name `%s` already exists", param.Name))
+	if len(param.name) != 0 {
+		if _, ok := m.parametersByName[param.name]; ok {
+			return errors.New(fmt.Sprintf("parameter with name `%s` already exists", param.name))
 		}
 
-		m.parametersByName[param.Name] = param
+		m.parametersByName[param.name] = param
 	}
 
-	param.SetMethod(m)
+	param.SetMethod(&m)
 	m.parameters = append(m.parameters, param)
 
 	if m.HasFixedSize() || len(m.parameters) == 1 {
-		if param.Type.HasFixedSize() {
-			m.size += param.Type.Size()
+		if param.dataType.HasFixedSize() {
+			m.size += param.dataType.Size()
 		} else {
 			m.size = 0
 		}

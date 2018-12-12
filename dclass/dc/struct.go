@@ -8,36 +8,37 @@ import (
 type Struct struct {
 	DistributedType
 
-	Id   uint
-	Name string
+	id   uint
+	name string
+	constrained bool
 
-	fields       []Field
 	fieldsByName map[string]Field
 	fieldsById   map[uint]Field
+
+	file File
 }
 
-func NewStruct(name string) Struct {
-	s := Struct{Name: name}
+func NewStruct(name string, file File) Struct {
+	s := Struct{name: name, file: file}
 	s.dataType = T_STRUCT
 
-	s.fields = make([]Field, 0)
 	s.fieldsByName = make(map[string]Field, 0)
 	s.fieldsById = make(map[uint]Field, 0)
 	return s
 }
 
-func (s Struct) GetFieldByName(name string) (ok *Field, err error) {
+func (s Struct) GetFieldByName(name string) (field *Field, ok bool) {
 	if val, ok := s.fieldsByName[name]; ok {
-		return &val, nil
+		return &val, true
 	}
-	return nil, errors.New(fmt.Sprintf("unable to index field `%s`", name))
+	return nil, false
 }
 
-func (s Struct) GetFieldById(id uint) (ok *Field, err error) {
+func (s Struct) GetFieldById(id uint) (field *Field, ok bool) {
 	if val, ok := s.fieldsById[id]; ok {
-		return &val, nil
+		return &val, true
 	}
-	return nil, errors.New(fmt.Sprintf("unable to index field id %d", id))
+	return nil, false
 }
 
 func (s Struct) AddField(field Field) (err error) {
@@ -51,7 +52,7 @@ func (s Struct) AddField(field Field) (err error) {
 
 	fieldName := field.Name()
 	if len(fieldName) == 0 {
-		if fieldName == s.Name {
+		if fieldName == s.name {
 			return errors.New("structures cannot have constructors")
 		}
 
@@ -64,15 +65,18 @@ func (s Struct) AddField(field Field) (err error) {
 
 	// TODO: add field to file
 	s.fieldsById[field.Id()] = field
-	s.fields = append(s.fields, field)
+	s.file.AddField(&field)
 
-	if s.HasFixedSize() || len(s.fields) == 1 {
+
+	if s.HasFixedSize() || len(s.fieldsByName) == 1 {
 		if field.Type().HasFixedSize() {
 			s.size += field.Type().Size()
 		} else {
 			s.size = 0
 		}
 	}
+
+	s.constrained = field.Type().HasRange() ? true : false
 	return nil
 }
 
