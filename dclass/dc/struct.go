@@ -8,12 +8,13 @@ import (
 type Struct struct {
 	DistributedType
 
-	id   uint
-	name string
+	id          uint
+	name        string
 	constrained bool
 
 	fieldsByName map[string]Field
 	fieldsById   map[uint]Field
+	fields       []Field
 
 	file File
 }
@@ -63,12 +64,11 @@ func (s Struct) AddField(field Field) (err error) {
 		s.fieldsByName[fieldName] = field
 	}
 
-	// TODO: add field to file
-	s.fieldsById[field.Id()] = field
 	s.file.AddField(&field)
+	s.fieldsById[field.Id()] = field
+	s.fields = append(s.fields, field)
 
-
-	if s.HasFixedSize() || len(s.fieldsByName) == 1 {
+	if s.HasFixedSize() || len(s.fields) == 1 {
 		if field.Type().HasFixedSize() {
 			s.size += field.Type().Size()
 		} else {
@@ -76,7 +76,7 @@ func (s Struct) AddField(field Field) (err error) {
 		}
 	}
 
-	s.constrained = field.Type().HasRange() ? true : false
+	s.constrained = field.Type().HasRange()
 	return nil
 }
 

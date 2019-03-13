@@ -26,12 +26,14 @@ import (
 // get_hash
 
 type File struct {
-	classes []*Class
-	structs []*Struct
+	KeywordList
+
+	classes  []*Class
+	structs  []*Struct
 	typedefs map[string]BaseType
 
-	fields []*Field
-	types []BaseType
+	fields      []*Field
+	types       []BaseType
 	typesByName map[string]BaseType
 }
 
@@ -53,6 +55,15 @@ func (f File) TypeByName(name string) (t *BaseType, ok bool) {
 	}
 
 	return nil, false
+}
+
+func (f File) AddTypedef(name string, t BaseType) (err error) {
+	if _, ok := f.typedefs[name]; ok {
+		return errors.New(fmt.Sprint("typedef `%s` is already declared", name))
+	}
+
+	f.typedefs[name] = t
+	return nil
 }
 
 func (f File) Class(n int) (t *Class, ok bool) {
@@ -87,8 +98,7 @@ func (f File) ClassByName(name string) (class *Class, ok bool) {
 	}
 }
 
-
-func (f File) Struct(n int) (t *Struct, ok bool){
+func (f File) Struct(n int) (t *Struct, ok bool) {
 	if n >= len(f.classes) {
 		return nil, false
 	}
@@ -118,4 +128,8 @@ func (f File) Field(n int) (t *Field, ok bool) {
 func (f File) AddField(field *Field) /* cannot throw an error */ {
 	(*field).SetId(uint(len(f.fields)))
 	f.fields = append(f.fields, field)
+}
+
+func (f File) GenerateHash(generator HashGenerator) {
+	// TODO
 }
