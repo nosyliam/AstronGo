@@ -1,3 +1,5 @@
+typedef test uint8;
+
 dclass DistributedTestObject1 {
 	setRequired1(uint32 r = 78) required broadcast ram;
 	setB1(uint8 x) broadcast;

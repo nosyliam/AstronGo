@@ -6,18 +6,13 @@ import (
 )
 
 type Parameter struct {
-	dataType      BaseType
+	dataType  BaseType
 	name      string
 	typeAlias string
 
 	defaultValue interface{}
 	method       *Method
 }
-func NewParameter(dataType BaseType, name string) Parameter {
-	p := Parameter{dataType: dataType, name: name}
-	return p
-}
-
 
 func (p Parameter) SetName(name string) (err error) {
 	if p.method != nil {
@@ -45,7 +40,7 @@ func (p Parameter) SetType(dataType BaseType) (err error) {
 }
 
 func (p Parameter) SetMethod(method *Method) { p.method = method }
-func (p Parameter) Method() Method          { return *p.method }
+func (p Parameter) Method() Method           { return *p.method }
 
 func (p Parameter) HasDefaultValue() bool           { return p.defaultValue != nil }
 func (p Parameter) SetDefaultValue(val interface{}) { p.defaultValue = &val }

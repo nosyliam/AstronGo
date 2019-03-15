@@ -8,14 +8,14 @@ type ArrayType struct {
 	arraySize  uint
 }
 
-func NewArray(elem BaseType, sz NumericRange) ArrayType {
-	a := ArrayType{elemType: elem, arrayRange: sz}
-	if sz.IsEmpty() {
+func NewArray(elem BaseType, rng NumericRange, size uint) ArrayType {
+	a := ArrayType{elemType: elem, arrayRange: rng, arraySize: size}
+	if rng.IsEmpty() {
 		a.arraySize = 0
 		a.arrayRange.min.uinteger = 0
 		a.arrayRange.max.uinteger = ^uint64(0)
-	} else if sz.min == sz.max {
-		a.arraySize = uint(sz.min.uinteger)
+	} else if rng.min == rng.max {
+		a.arraySize = uint(rng.min.uinteger)
 	} else {
 		a.arraySize = 0
 	}
@@ -48,15 +48,15 @@ func NewArray(elem BaseType, sz NumericRange) ArrayType {
 func (a ArrayType) ArraySize() uint       { return a.arraySize }
 func (a ArrayType) ElementType() BaseType { return a.elemType }
 
-func (a ArrayType) HasRange() bool         { return a.arrayRange.IsEmpty() }
+func (a ArrayType) HasRange() bool      { return a.arrayRange.IsEmpty() }
 func (a ArrayType) Range() NumericRange { return a.arrayRange }
 
-func (a ArrayType) DefaultValue() interface {} {
+func (a ArrayType) DefaultValue() interface{} {
 	switch a.dataType {
 	case T_ARRAY:
 	case T_BLOB:
 	case T_STRING:
-		return [a.arraySize]uint8{}
+		return make([]uint8, a.arraySize)
 	case T_VARARRAY:
 	case T_VARBLOB:
 	case T_VARSTRING:
