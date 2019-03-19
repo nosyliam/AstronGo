@@ -12,10 +12,10 @@ func NewArray(elem BaseType, rng NumericRange, size uint) ArrayType {
 	a := ArrayType{elemType: elem, arrayRange: rng, arraySize: size}
 	if rng.IsEmpty() {
 		a.arraySize = 0
-		a.arrayRange.min.uinteger = 0
-		a.arrayRange.max.uinteger = ^uint64(0)
-	} else if rng.min == rng.max {
-		a.arraySize = uint(rng.min.uinteger)
+		a.arrayRange.Min.Uinteger = 0
+		a.arrayRange.Max.Uinteger = ^uint64(0)
+	} else if rng.Min == rng.Max {
+		a.arraySize = uint(rng.Min.Uinteger)
 	} else {
 		a.arraySize = 0
 	}

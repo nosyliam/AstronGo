@@ -16,9 +16,9 @@ const (
 )
 
 type Number struct {
-	integer  int64
-	uinteger uint64
-	float    float64
+	Integer  int64
+	Uinteger uint64
+	Float    float64
 }
 
 type NumericType struct {
@@ -33,15 +33,15 @@ type NumericType struct {
 }
 
 type NumericRange struct {
-	ntype NumberType
-	min   Number
-	max   Number
+	Type NumberType
+	Min  Number
+	Max  Number
 }
 
 func NewNumber(ntype Type) NumericType {
 	n := NumericType{Divisor: 1, calculatedRange: NumericRange{
-		min: Number{float: math.Inf(1)},
-		max: Number{float: math.Inf(-1)},
+		Min: Number{Float: math.Inf(1)},
+		Max: Number{Float: math.Inf(-1)},
 	}}
 	n.dataType = ntype
 
@@ -69,20 +69,20 @@ func NewNumber(ntype Type) NumericType {
 }
 
 func (n NumericRange) Contains(num Number) bool {
-	switch n.ntype {
+	switch n.Type {
 	case NONE:
 		return true
 	case INT:
-		return n.min.integer <= num.integer && num.integer <= n.max.integer
+		return n.Min.Integer <= num.Integer && num.Integer <= n.Max.Integer
 	case UINT:
-		return n.min.uinteger <= num.uinteger && num.uinteger <= n.max.uinteger
+		return n.Min.Uinteger <= num.Uinteger && num.Uinteger <= n.Max.Uinteger
 	case FLOAT:
-		return n.min.float <= num.float && num.float <= n.max.float
+		return n.Min.Float <= num.Float && num.Float <= n.Max.Float
 	default:
 		return false
 	}
 }
-func (n NumericRange) IsEmpty() bool { return n.ntype == NONE }
+func (n NumericRange) IsEmpty() bool { return n.Type == NONE }
 
 func (n NumericType) dataToNumber(data []byte) (ok *Number, err error) {
 	if n.size != Sizetag_t(len(data)) {
@@ -91,35 +91,35 @@ func (n NumericType) dataToNumber(data []byte) (ok *Number, err error) {
 
 	switch n.dataType {
 	case T_INT8:
-		return &Number{integer: int64(data[0])}, nil
+		return &Number{Integer: int64(data[0])}, nil
 	case T_INT16:
-		return &Number{integer: int64(binary.LittleEndian.Uint16(data))}, nil
+		return &Number{Integer: int64(binary.LittleEndian.Uint16(data))}, nil
 	case T_INT32:
-		return &Number{integer: int64(binary.LittleEndian.Uint32(data))}, nil
+		return &Number{Integer: int64(binary.LittleEndian.Uint32(data))}, nil
 	case T_INT64:
-		return &Number{integer: int64(binary.LittleEndian.Uint64(data))}, nil
+		return &Number{Integer: int64(binary.LittleEndian.Uint64(data))}, nil
 	case T_CHAR:
 	case T_UINT8:
-		return &Number{uinteger: uint64(data[0])}, nil
+		return &Number{Uinteger: uint64(data[0])}, nil
 	case T_UINT16:
-		return &Number{uinteger: uint64(binary.LittleEndian.Uint16(data))}, nil
+		return &Number{Uinteger: uint64(binary.LittleEndian.Uint16(data))}, nil
 	case T_UINT32:
-		return &Number{uinteger: uint64(binary.LittleEndian.Uint32(data))}, nil
+		return &Number{Uinteger: uint64(binary.LittleEndian.Uint32(data))}, nil
 	case T_UINT64:
-		return &Number{uinteger: uint64(binary.LittleEndian.Uint64(data))}, nil
+		return &Number{Uinteger: uint64(binary.LittleEndian.Uint64(data))}, nil
 	case T_FLOAT32:
 		bits := binary.LittleEndian.Uint32(data)
-		return &Number{float: float64(math.Float32frombits(bits))}, nil
+		return &Number{Float: float64(math.Float32frombits(bits))}, nil
 	case T_FLOAT64:
 		bits := binary.LittleEndian.Uint64(data)
-		return &Number{float: math.Float64frombits(bits)}, nil
+		return &Number{Float: math.Float64frombits(bits)}, nil
 	}
 	return nil, errors.New("unknown error while converting data to number")
 }
 
-func (n NumericType) SetDivisor(divisor uint32) (err error) {
+func (n NumericType) SetDivisor(divisor uint32) (ok bool) {
 	if divisor == 0 {
-		return errors.New("invalid Divisor passed to NumericType")
+		return false
 	}
 
 	n.Divisor = divisor
@@ -130,88 +130,84 @@ func (n NumericType) SetDivisor(divisor uint32) (err error) {
 		n.SetModulus(n.Modulus)
 	}
 
-	return nil
+	return true
 }
 
-func (n NumericType) SetModulus(modulus float64) (err error) {
+func (n NumericType) SetModulus(modulus float64) (ok bool) {
 	uint_mod := uint64(math.Floor(modulus * float64(n.Divisor)))
 	if modulus <= 0.0 {
-		goto invalidModulus
+		return false
 	}
 
 	switch n.dataType {
 	case T_CHAR:
 	case T_UINT8:
 		if uint_mod < 1 || uint64(^uint8(0))+1 < uint_mod {
-			goto invalidModulus
+			return false
 		}
-		n.calculatedModulus.uinteger = uint_mod
+		n.calculatedModulus.Uinteger = uint_mod
 		break
 	case T_UINT16:
 		if uint_mod < 1 || uint64(^uint16(0))+1 < uint_mod {
-			goto invalidModulus
+			return false
 		}
-		n.calculatedModulus.uinteger = uint_mod
+		n.calculatedModulus.Uinteger = uint_mod
 		break
 	case T_UINT32:
 		if uint_mod < 1 || uint64(^uint32(0))+1 < uint_mod {
-			goto invalidModulus
+			return false
 		}
-		n.calculatedModulus.uinteger = uint_mod
+		n.calculatedModulus.Uinteger = uint_mod
 		break
 	case T_UINT64:
 		if uint_mod < 1 {
-			goto invalidModulus
+			return false
 		}
-		n.calculatedModulus.uinteger = uint_mod
+		n.calculatedModulus.Uinteger = uint_mod
 		break
 	case T_FLOAT32:
 	case T_FLOAT64:
-		n.calculatedModulus.float = modulus * float64(n.Divisor)
+		n.calculatedModulus.Float = modulus * float64(n.Divisor)
 		break
 	default:
-		goto invalidModulus
+		return false
 	}
 
 	n.Modulus = modulus
-	return nil
-
-invalidModulus:
-	return errors.New("invalid range for numeric type")
+	return true
 }
 
-func (n NumericType) SetRange(rng NumericRange) (err error) {
+func (n NumericType) SetRange(rng NumericRange) {
 	n.Range = rng
 	switch n.dataType {
 	case T_INT8:
 	case T_INT16:
 	case T_INT32:
 	case T_INT64:
-		min := int64(math.Floor(rng.min.float*float64(n.Divisor) + 0.5))
-		max := int64(math.Floor(rng.max.float*float64(n.Divisor) + 0.5))
-		n.calculatedRange.min = Number{integer: min}
-		n.calculatedRange.max = Number{integer: max}
+		min := int64(math.Floor(rng.Min.Float*float64(n.Divisor) + 0.5))
+		max := int64(math.Floor(rng.Max.Float*float64(n.Divisor) + 0.5))
+		n.calculatedRange.Min = Number{Integer: min}
+		n.calculatedRange.Max = Number{Integer: max}
+		n.calculatedRange.Type = INT
 		break
 	case T_CHAR:
 	case T_UINT8:
 	case T_UINT16:
 	case T_UINT32:
 	case T_UINT64:
-		min := uint64(math.Floor(rng.min.float*float64(n.Divisor) + 0.5))
-		max := uint64(math.Floor(rng.max.float*float64(n.Divisor) + 0.5))
-		n.calculatedRange.min = Number{uinteger: min}
-		n.calculatedRange.max = Number{uinteger: max}
+		min := uint64(math.Floor(rng.Min.Float*float64(n.Divisor) + 0.5))
+		max := uint64(math.Floor(rng.Max.Float*float64(n.Divisor) + 0.5))
+		n.calculatedRange.Min = Number{Uinteger: min}
+		n.calculatedRange.Max = Number{Uinteger: max}
+		n.calculatedRange.Type = UINT
 		break
 	case T_FLOAT32:
 	case T_FLOAT64:
-		n.calculatedRange.min = Number{float: rng.min.float * float64(n.Divisor)}
-		n.calculatedRange.max = Number{float: rng.max.float * float64(n.Divisor)}
+		n.calculatedRange.Min = Number{Float: rng.Min.Float * float64(n.Divisor)}
+		n.calculatedRange.Max = Number{Float: rng.Max.Float * float64(n.Divisor)}
+		n.calculatedRange.Type = FLOAT
 		break
-	default:
-		return errors.New("invalid range for numeric type")
 	}
-
-	return nil
 }
 
 func (n NumericType) WithinRange(data []byte, length uint64) bool {
