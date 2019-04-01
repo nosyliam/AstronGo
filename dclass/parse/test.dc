@@ -1,4 +1,4 @@
-typedef test uint8;
+typedef int16/1000 pair16[2];
 
 dclass DistributedTestObject1 {
 	setRequired1(uint32 r = 78) required broadcast ram;

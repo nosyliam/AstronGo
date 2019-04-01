@@ -1,15 +1,16 @@
 package parse
 
 import (
-	"fmt"
+	"github.com/davecgh/go-spew/spew"
 	"testing"
 )
 
-func TestParse(t *testing.T) {
+func TestTraverse(t *testing.T) {
 	dc, err := ParseFile("dclass/parse/test.dc")
 	if err != nil {
 		t.Fatalf("test dclass parse failed: %s", err)
 	}
 
-	fmt.Print(dc)
+	dcf := dc.traverse()
+	spew.Dump(dcf)
 }

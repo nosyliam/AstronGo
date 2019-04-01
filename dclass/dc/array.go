@@ -8,8 +8,8 @@ type ArrayType struct {
 	arraySize  uint
 }
 
-func NewArray(elem BaseType, rng NumericRange, size uint) ArrayType {
-	a := ArrayType{elemType: elem, arrayRange: rng, arraySize: size}
+func NewArray(elem BaseType, rng NumericRange) ArrayType {
+	a := ArrayType{elemType: elem, arrayRange: rng}
 	if rng.IsEmpty() {
 		a.arraySize = 0
 		a.arrayRange.Min.Uinteger = 0
@@ -53,13 +53,9 @@ func (a ArrayType) Range() NumericRange { return a.arrayRange }
 
 func (a ArrayType) DefaultValue() interface{} {
 	switch a.dataType {
-	case T_ARRAY:
-	case T_BLOB:
-	case T_STRING:
+	case T_ARRAY, T_BLOB, T_STRING:
 		return make([]uint8, a.arraySize)
-	case T_VARARRAY:
-	case T_VARBLOB:
-	case T_VARSTRING:
+	case T_VARARRAY, T_VARBLOB, T_VARSTRING:
 		return []uint8{}
 
 	}
