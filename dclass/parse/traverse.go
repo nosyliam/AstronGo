@@ -15,7 +15,7 @@ func (node Number) consume() int64 {
 	return val
 }
 
-func (node IntTransform) apply(n dc.NumericType) {
+func (node IntTransform) apply(n *dc.NumericType) {
 	switch node.Operator {
 	case "%":
 		if ok := n.SetModulus(float64(node.Value)); !ok {

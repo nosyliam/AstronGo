@@ -38,8 +38,8 @@ type NumericRange struct {
 	Max  Number
 }
 
-func NewNumber(ntype Type) NumericType {
-	n := NumericType{Divisor: 1, calculatedRange: NumericRange{
+func NewNumber(ntype Type) *NumericType {
+	n := &NumericType{Divisor: 1, calculatedRange: NumericRange{
 		Min: Number{Float: math.Inf(-1)},
 		Max: Number{Float: math.Inf(1)},
 	}}
@@ -109,7 +109,7 @@ func (n NumericType) dataToNumber(data []byte) (ok *Number, err error) {
 	return nil, errors.New("unknown error while converting data to number")
 }
 
-func (n NumericType) SetDivisor(divisor uint32) (ok bool) {
+func (n *NumericType) SetDivisor(divisor uint32) (ok bool) {
 	if divisor == 0 {
 		return false
 	}
@@ -125,7 +125,7 @@ func (n NumericType) SetDivisor(divisor uint32) (ok bool) {
 	return true
 }
 
-func (n NumericType) SetModulus(modulus float64) (ok bool) {
+func (n *NumericType) SetModulus(modulus float64) (ok bool) {
 	uint_mod := uint64(math.Floor(modulus * float64(n.Divisor)))
 	if modulus <= 0.0 {
 		return false
@@ -167,7 +167,7 @@ func (n NumericType) SetModulus(modulus float64) (ok bool) {
 	return true
 }
 
-func (n NumericType) SetRange(rng NumericRange) {
+func (n *NumericType) SetRange(rng NumericRange) {
 	n.Range = rng
 	switch n.dataType {
 	case T_INT8, T_INT16, T_INT32, T_INT64:
@@ -192,7 +192,7 @@ func (n NumericType) SetRange(rng NumericRange) {
 	}
 }
 
-func (n NumericType) WithinRange(data []byte, length uint64) bool {
+func (n *NumericType) WithinRange(data []byte, length uint64) bool {
 	encoded, err := n.dataToNumber(data)
 	if err != nil {
 		return false
@@ -200,7 +200,7 @@ func (n NumericType) WithinRange(data []byte, length uint64) bool {
 	return n.calculatedRange.Contains(*encoded)
 }
 
-func (n NumericType) DefaultValue() interface{} {
+func (n *NumericType) DefaultValue() interface{} {
 	switch n.dataType {
 	case T_CHAR, T_INT8, T_UINT8:
 		return uint8(0)
@@ -218,6 +218,6 @@ func (n NumericType) DefaultValue() interface{} {
 
 	return 0
 }
-func (n NumericType) GenerateHash(generator HashGenerator) {
+func (n *NumericType) GenerateHash(generator HashGenerator) {
 	// TODO
 }

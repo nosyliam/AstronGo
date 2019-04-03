@@ -15,8 +15,8 @@ type Class struct {
 	parents    []Class
 }
 
-func NewClass(file File, name string) Class {
-	c := Class{file: file}
+func NewClass(file File, name string) *Class {
+	c := &Class{file: file}
 	c.dataType = T_STRUCT
 	c.name = name
 
@@ -24,7 +24,7 @@ func NewClass(file File, name string) Class {
 	return c
 }
 
-func (c Class) AddParent(class Class) {
+func (c *Class) AddParent(class Class) {
 	c.parents = append(c.parents, class)
 
 	for _, field := range class.baseFields {
@@ -32,7 +32,7 @@ func (c Class) AddParent(class Class) {
 	}
 }
 
-func (c Class) AddField(field Field) (err error) {
+func (c *Class) AddField(field Field) (err error) {
 	if fs := field.Struct(); &fs != &c.Struct {
 		return errors.New("different classes cannot share the same field")
 	}
@@ -74,7 +74,7 @@ func (c Class) AddField(field Field) (err error) {
 	return nil
 }
 
-func (c Class) AddInheritedField(field Field) {
+func (c *Class) AddInheritedField(field Field) {
 	fieldName := field.Name()
 	if _, ok := c.baseFields[fieldName]; ok {
 		return
@@ -99,6 +99,6 @@ func (c Class) AddInheritedField(field Field) {
 	c.constrained = field.Type().HasRange()
 }
 
-func (c Class) GenerateHash(generator HashGenerator) {
+func (c *Class) GenerateHash(generator HashGenerator) {
 	// TODO
 }

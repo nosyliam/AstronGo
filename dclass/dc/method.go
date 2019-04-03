@@ -14,8 +14,8 @@ type Method struct {
 	parametersByName map[string]Parameter
 }
 
-func NewMethod() Method {
-	m := Method{}
+func NewMethod() *Method {
+	m := &Method{}
 	m.dataType = T_METHOD
 
 	m.parameters = make([]Parameter, 0)
@@ -51,6 +51,6 @@ func (m Method) AddParameter(param Parameter) (err error) {
 	return nil
 }
 
-func (m Method) GenerateHash(generator HashGenerator) {
+func (m *Method) GenerateHash(generator HashGenerator) {
 	// TODO
 }

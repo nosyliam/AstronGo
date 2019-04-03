@@ -33,7 +33,7 @@ type AtomicField struct {
 }
 
 func NewAtomicField(dataType BaseType, name string) Field {
-	f := AtomicField{fieldType: dataType, name: name}
+	f := &AtomicField{fieldType: dataType, name: name}
 	f.keywords = make(map[string]struct{}, 0)
 	return f
 }
@@ -49,16 +49,16 @@ func (f AtomicField) SetName(name string) (err error) {
 	return nil
 }
 
-func (f AtomicField) Type() BaseType { return f.fieldType }
-func (f AtomicField) Name() string   { return f.name }
-func (f AtomicField) Id() uint       { return f.id }
-func (f AtomicField) SetId(id uint)  { f.id = id }
+func (f *AtomicField) Type() BaseType { return f.fieldType }
+func (f *AtomicField) Name() string   { return f.name }
+func (f *AtomicField) Id() uint       { return f.id }
+func (f *AtomicField) SetId(id uint)  { f.id = id }
 
-func (f AtomicField) SetStruct(s Struct) { f.parentStruct = &s }
-func (f AtomicField) Struct() Struct     { return *f.parentStruct }
+func (f *AtomicField) SetStruct(s Struct) { f.parentStruct = &s }
+func (f *AtomicField) Struct() Struct     { return *f.parentStruct }
 
-func (f AtomicField) HasDefaultValue() bool { return f.defaultValue != nil }
-func (f AtomicField) DefaultValue() interface{} {
+func (f *AtomicField) HasDefaultValue() bool { return f.defaultValue != nil }
+func (f *AtomicField) DefaultValue() interface{} {
 	if f.HasDefaultValue() {
 		return *f.defaultValue
 	}

@@ -14,7 +14,7 @@ type Parameter struct {
 	method       *Method
 }
 
-func (p Parameter) SetName(name string) (err error) {
+func (p *Parameter) SetName(name string) (err error) {
 	if p.method != nil {
 		if _, err := p.method.GetParameterByName(name); err != nil {
 			return errors.New(fmt.Sprintf("parameter %s already exists in parent method", name))
@@ -25,7 +25,7 @@ func (p Parameter) SetName(name string) (err error) {
 	return nil
 }
 
-func (p Parameter) SetType(dataType BaseType) (err error) {
+func (p *Parameter) SetType(dataType BaseType) (err error) {
 	if dataType.Type() == T_METHOD {
 		return errors.New("parameters cannot have method types")
 	}

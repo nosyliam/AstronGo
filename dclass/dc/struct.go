@@ -19,8 +19,8 @@ type Struct struct {
 	file File
 }
 
-func NewStruct(name string, file File) Struct {
-	s := Struct{name: name, file: file}
+func NewStruct(name string, file File) *Struct {
+	s := &Struct{name: name, file: file}
 	s.dataType = T_STRUCT
 
 	s.fieldsByName = make(map[string]Field, 0)
@@ -42,8 +42,8 @@ func (s Struct) GetFieldById(id uint) (field *Field, ok bool) {
 	return nil, false
 }
 
-func (s Struct) AddField(field Field) (err error) {
-	if fs := field.Struct(); &fs != &s {
+func (s *Struct) AddField(field Field) (err error) {
+	if fs := field.Struct(); &fs != s {
 		return errors.New("different structures cannot share the same field")
 	}
 
@@ -80,6 +80,6 @@ func (s Struct) AddField(field Field) (err error) {
 	return nil
 }
 
-func (s Struct) GenerateHash(generator HashGenerator) {
+func (s *Struct) GenerateHash(generator HashGenerator) {
 
 }

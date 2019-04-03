@@ -89,17 +89,17 @@ type DistributedType struct {
 	alias    string
 }
 
-func (d DistributedType) Type() Type                                  { return d.dataType }
-func (d DistributedType) HasRange() bool                              { return false }
-func (d DistributedType) SetAlias(alias string)                       { d.alias = alias }
-func (d DistributedType) Alias() string                               { return d.alias }
-func (d DistributedType) WithinRange(data []byte, length uint64) bool { return true }
-func (d DistributedType) HasFixedSize() bool                          { return d.size > 0 }
-func (d DistributedType) Size() Sizetag_t                             { return d.size }
-func (d DistributedType) DefaultValue() interface{} {
+func (d *DistributedType) Type() Type                                  { return d.dataType }
+func (d *DistributedType) HasRange() bool                              { return false }
+func (d *DistributedType) SetAlias(alias string)                       { d.alias = alias }
+func (d *DistributedType) Alias() string                               { return d.alias }
+func (d *DistributedType) WithinRange(data []byte, length uint64) bool { return true }
+func (d *DistributedType) HasFixedSize() bool                          { return d.size > 0 }
+func (d *DistributedType) Size() Sizetag_t                             { return d.size }
+func (d *DistributedType) DefaultValue() interface{} {
 	return ""
 }
 
-func (d DistributedType) GenerateHash(generator HashGenerator) {
+func (d *DistributedType) GenerateHash(generator HashGenerator) {
 	// todo
 }

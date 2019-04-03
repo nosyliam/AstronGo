@@ -37,12 +37,12 @@ type File struct {
 	typesByName map[string]BaseType
 }
 
-func NewFile() File {
+func NewFile() *File {
 	f := File{}
 	f.typedefs = make(map[string]BaseType, 0)
 	f.typesByName = make(map[string]BaseType, 0)
 
-	return f
+	return &f
 }
 
 func (f File) TypeById(n int) (t *BaseType, ok bool) {
