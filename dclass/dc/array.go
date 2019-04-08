@@ -45,8 +45,8 @@ func NewArray(elem BaseType, rng NumericRange) *ArrayType {
 	return a
 }
 
-func (a ArrayType) ArraySize() uint       { return a.arraySize }
-func (a ArrayType) ElementType() BaseType { return a.elemType }
+func (a *ArrayType) ArraySize() uint       { return a.arraySize }
+func (a *ArrayType) ElementType() BaseType { return a.elemType }
 
 func (a *ArrayType) HasRange() bool      { return a.arrayRange.IsEmpty() }
 func (a *ArrayType) Range() NumericRange { return a.arrayRange }

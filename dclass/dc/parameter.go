@@ -14,6 +14,12 @@ type Parameter struct {
 	method       *Method
 }
 
+func NewParameter(dataType BaseType, name string) *Parameter {
+	p := &Parameter{dataType: dataType, name: name}
+
+	return p
+}
+
 func (p *Parameter) SetName(name string) (err error) {
 	if p.method != nil {
 		if _, err := p.method.GetParameterByName(name); err != nil {
@@ -30,7 +36,7 @@ func (p *Parameter) SetType(dataType BaseType) (err error) {
 		return errors.New("parameters cannot have method types")
 	}
 
-	if _, ok := dataType.(Class); ok {
+	if _, ok := dataType.(*Class); ok {
 		return errors.New("parameters cannot have class types")
 	}
 
@@ -39,9 +45,9 @@ func (p *Parameter) SetType(dataType BaseType) (err error) {
 	return nil
 }
 
-func (p Parameter) SetMethod(method *Method) { p.method = method }
-func (p Parameter) Method() Method           { return *p.method }
+func (p *Parameter) SetMethod(method *Method) { p.method = method }
+func (p *Parameter) Method() Method           { return *p.method }
 
-func (p Parameter) HasDefaultValue() bool           { return p.defaultValue != nil }
-func (p Parameter) SetDefaultValue(val interface{}) { p.defaultValue = &val }
-func (p Parameter) GetDefaultValue() interface{}    { return &p.defaultValue }
+func (p *Parameter) HasDefaultValue() bool           { return p.defaultValue != nil }
+func (p *Parameter) SetDefaultValue(val interface{}) { p.defaultValue = &val }
+func (p *Parameter) GetDefaultValue() interface{}    { return &p.defaultValue }

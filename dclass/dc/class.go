@@ -33,10 +33,6 @@ func (c *Class) AddParent(class Class) {
 }
 
 func (c *Class) AddField(field Field) (err error) {
-	if fs := field.Struct(); &fs != &c.Struct {
-		return errors.New("different classes cannot share the same field")
-	}
-
 	if len(field.Name()) == 0 {
 		return errors.New("class field names cannot be empty")
 	}

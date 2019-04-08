@@ -97,7 +97,7 @@ func (node Range) consume(dtype dc.Type) dc.NumericRange {
 		Max: dc.Number{Integer: int64(hi), Uinteger: uint64(hi), Float: hi}}
 }
 
-func (node TypeCapture) consume(d dc.File) dc.BaseType {
+func (node TypeCapture) consume(d *dc.File) dc.BaseType {
 	var builtType dc.BaseType
 
 	if node.Constraint == nil {
@@ -136,7 +136,7 @@ func (node TypeCapture) consume(d dc.File) dc.BaseType {
 	return builtType
 }
 
-func (node Typedef) traverse(d dc.File) {
+func (node Typedef) traverse(d *dc.File) {
 	var base dc.BaseType
 	base = node.Base.consume(d)
 
@@ -150,33 +150,123 @@ func (node Typedef) traverse(d dc.File) {
 	}
 }
 
-func (node ClassType) traverse(d dc.File) {
+func (node IntParameter) consume() dc.BaseType {
+	var builtType dc.BaseType
+	nodeType := dc.StringToType(node.Type)
+	numType := dc.NewNumber(nodeType)
+
+	if node.Constraint == nil {
+		node.Constraint = &Range{}
+	}
+
+	for _, trans := range node.Transforms {
+		trans.apply(numType)
+	}
+
+	numType.SetRange(node.Constraint.consume(nodeType))
+	if node.ArrayPrefix != nil && node.ArraySuffix != nil {
+		panic(fmt.Sprintf("invalid syntax at line %d", node.Pos.Line))
+	}
+
+	builtType = dc.BaseType(numType)
+	for _, bounds := range node.ArraySuffix {
+		builtType = bounds.consume(builtType)
+	}
+
+	for _, bounds := range node.ArrayPrefix {
+		builtType = bounds.consume(builtType)
+	}
+
+	return dc.BaseType(builtType)
+}
+
+func (node Parameter) consume(d *dc.File) dc.BaseType {
+	var builtType dc.BaseType
+
+	switch true {
+	case node.Float != nil:
+	case node.Char != nil:
+	case node.Int != nil:
+		builtType = node.Int.consume()
+	case node.Sized != nil:
+	case node.Typed != nil:
+	}
+
+	return builtType
+}
+
+func (node Parameter) name() string {
+	var str *string
+
+	switch true {
+	case node.Float != nil:
+		str = node.Float.Identifier
+	case node.Char != nil:
+		str = node.Char.Identifier
+	case node.Int != nil:
+		str = node.Int.Identifier
+	case node.Sized != nil:
+		str = node.Sized.Identifier
+	case node.Typed != nil:
+		str = node.Typed.Identifier
+	}
+
+	if str == nil {
+		return ""
+	} else {
+		return *str
+	}
+}
+
+func (node AtomicField) consume(d *dc.File) dc.Field {
+	field := dc.NewAtomicField(node.Parameter.consume(d), node.Parameter.name())
+	return dc.Field(field)
+}
+
+func (node FieldDecl) consume(d *dc.File) dc.Field {
+	var builtType dc.Field
+
+	switch true {
+	case node.Method != nil:
+	case node.Molecular != nil:
+	case node.Atomic != nil:
+		builtType = node.Atomic.consume(d)
+	}
+
+	return builtType
+}
+
+func (node ClassType) traverse(d *dc.File) {
 
 }
 
-func (node StructType) traverse(d dc.File) {
+func (node StructType) traverse(d *dc.File) {
+	strct := dc.NewStruct(node.Name, d)
+	for _, field := range node.Declarations {
+		strct.AddField(field.consume(d))
+	}
 
+	if err := d.AddStruct(strct); err != nil {
+		panic(fmt.Sprintf("cannot add struct '%s' at line %d as a type was already declared with that name", node.Name, node.Pos.Line))
+	}
 }
 
-func (node TypeDecl) traverse(d dc.File) {
+func (node TypeDecl) traverse(d *dc.File) {
 	switch true {
 	case node.Keyword != nil:
 		d.AddKeyword(node.Keyword.Name)
 	case node.Import != nil:
-		break
 	case node.Typedef != nil:
 		node.Typedef.traverse(d)
-		break
 	case node.Struct != nil:
-		break
+		node.Struct.traverse(d)
 	case node.Class != nil:
-		break
 	default:
 		panic(fmt.Sprintf("malformed declaration at line %d", node.Pos.Line))
 	}
 }
 
-func (d DCFile) traverse() dc.File {
+func (d DCFile) traverse() *dc.File {
 	file := dc.NewFile()
 	for _, declaration := range d.Declarations {
 		declaration.traverse(file)

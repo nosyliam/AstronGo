@@ -29,7 +29,7 @@ func (m Method) GetParameterByName(name string) (ok *Parameter, err error) {
 	}
 	return nil, errors.New(fmt.Sprintf("unable to index field `%s`", name))
 }
-func (m Method) AddParameter(param Parameter) (err error) {
+func (m *Method) AddParameter(param Parameter) (err error) {
 	if len(param.name) != 0 {
 		if _, ok := m.parametersByName[param.name]; ok {
 			return errors.New(fmt.Sprintf("parameter with name `%s` already exists", param.name))
@@ -38,7 +38,7 @@ func (m Method) AddParameter(param Parameter) (err error) {
 		m.parametersByName[param.name] = param
 	}
 
-	param.SetMethod(&m)
+	param.SetMethod(m)
 	m.parameters = append(m.parameters, param)
 
 	if m.HasFixedSize() || len(m.parameters) == 1 {

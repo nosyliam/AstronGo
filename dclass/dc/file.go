@@ -65,7 +65,7 @@ func (f File) TypeByName(name string) (t *BaseType, ok bool) {
 	return nil, false
 }
 
-func (f File) AddTypedef(name string, t BaseType) (err error) {
+func (f *File) AddTypedef(name string, t BaseType) (err error) {
 	if _, ok := f.typedefs[name]; ok {
 		return errors.New(fmt.Sprint("typedef `%s` is already declared", name))
 	}
@@ -82,7 +82,7 @@ func (f File) Class(n int) (t *Class, ok bool) {
 	return f.classes[n], ok
 }
 
-func (f File) AddClass(class *Class) (err error) {
+func (f *File) AddClass(class *Class) (err error) {
 	if _, ok := f.TypeByName(class.name); ok {
 		return errors.New(fmt.Sprint("type `%s` is already defined", class.name))
 	}
@@ -99,10 +99,10 @@ func (f File) ClassByName(name string) (class *Class, ok bool) {
 		return nil, false
 	}
 
-	if class, ok := (*t).(Class); !ok {
+	if class, ok := (*t).(*Class); !ok {
 		return nil, false
 	} else {
-		return &class, true
+		return class, true
 	}
 }
 
@@ -114,7 +114,7 @@ func (f File) Struct(n int) (t *Struct, ok bool) {
 	return f.structs[n], true
 }
 
-func (f File) AddStruct(strct *Struct) (err error) {
+func (f *File) AddStruct(strct *Struct) (err error) {
 	if _, ok := f.TypeByName(strct.name); ok {
 		return errors.New(fmt.Sprint("type `%s` is already defined", strct.name))
 	}
@@ -133,7 +133,7 @@ func (f File) Field(n int) (t *Field, ok bool) {
 	return f.fields[n], true
 }
 
-func (f File) AddField(field *Field) /* cannot throw an error */ {
+func (f *File) AddField(field *Field) /* cannot throw an error */ {
 	(*field).SetId(uint(len(f.fields)))
 	f.fields = append(f.fields, field)
 }

@@ -16,10 +16,10 @@ type Struct struct {
 	fieldsById   map[uint]Field
 	fields       []Field
 
-	file File
+	file *File
 }
 
-func NewStruct(name string, file File) *Struct {
+func NewStruct(name string, file *File) *Struct {
 	s := &Struct{name: name, file: file}
 	s.dataType = T_STRUCT
 
@@ -43,10 +43,6 @@ func (s Struct) GetFieldById(id uint) (field *Field, ok bool) {
 }
 
 func (s *Struct) AddField(field Field) (err error) {
-	if fs := field.Struct(); &fs != s {
-		return errors.New("different structures cannot share the same field")
-	}
-
 	if _, ok := field.(MolecularField); ok {
 		return errors.New("structures cannot contain molecular fields")
 	}
@@ -64,6 +60,7 @@ func (s *Struct) AddField(field Field) (err error) {
 		s.fieldsByName[fieldName] = field
 	}
 
+	field.SetStruct(s)
 	s.file.AddField(&field)
 	s.fieldsById[field.Id()] = field
 	s.fields = append(s.fields, field)

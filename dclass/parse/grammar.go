@@ -101,7 +101,7 @@ type SizedParameter struct {
 type AmbiguousParameter struct {
 	Pos             lexer.Position
 	Type            string         `@Ident`
-	Identifier      string         `[ @Ident ]`
+	Identifier      *string        `[ @Ident ]`
 	ArrayConstraint []*ArrayBounds `[ { @@ } ]`
 	Default         *DefaultValue  `[ '=' @@ ]`
 }
@@ -115,7 +115,7 @@ type Parameter struct {
 	Typed *AmbiguousParameter `| @@`
 }
 
-type AtomicField struct {
+type MethodField struct {
 	Pos        lexer.Position
 	Name       string       `@Ident`
 	Parameters []*Parameter `'(' [ @@ ] { "," @@ } ')'`
@@ -128,7 +128,7 @@ type MolecularField struct {
 	Fields []string `':' @Ident { ',' @Ident }`
 }
 
-type ParameterField struct {
+type AtomicField struct {
 	Pos       lexer.Position
 	Parameter *Parameter   `@@`
 	Keywords  *KeywordList `[ @@ ]`
@@ -136,9 +136,9 @@ type ParameterField struct {
 
 type FieldDecl struct {
 	Pos       lexer.Position
-	Atomic    *AtomicField    `@@`
+	Method    *MethodField    `@@`
 	Molecular *MolecularField `| @@`
-	Parameter *ParameterField `| @@`
+	Atomic    *AtomicField    `| @@`
 }
 
 type ClassType struct {
@@ -149,9 +149,9 @@ type ClassType struct {
 }
 
 type StructType struct {
-	Pos        lexer.Position
-	Name       string       `"struct" @Ident`
-	Parameters []*Parameter `'{' { @@ ';' } '}' [ ';' ]`
+	Pos          lexer.Position
+	Name         string       `"struct" @Ident`
+	Declarations []*FieldDecl `'{' { @@ ';' } '}' [ ';' ]`
 }
 
 type TypeCapture struct {
