@@ -80,12 +80,14 @@ type IntParameter struct {
 }
 
 type FloatParameter struct {
-	Pos        lexer.Position
-	Type       string          `@"float64"`
-	Transforms []*IntTransform `[ @@ { @@ } ]`
-	Constraint *Range          `[ @@ ]`
-	Identifier *string         `[ @Ident ]`
-	Default    *DefaultValue   `[ '=' @@ ]`
+	Pos         lexer.Position
+	Type        string          `@"float64"`
+	Transforms  []*IntTransform `[ @@ { @@ } ]`
+	Constraint  *Range          `[ @@ ]`
+	ArrayPrefix []*ArrayBounds  `[ { @@ } ]`
+	Identifier  *string         `[ @Ident ]`
+	ArraySuffix []*ArrayBounds  `[ { @@ } ]`
+	Default     *DefaultValue   `[ '=' @@ ]`
 }
 
 type SizedParameter struct {

@@ -4,18 +4,18 @@ type KeywordList struct {
 	keywords map[string]struct{}
 }
 
-func (k KeywordList) AddKeyword(kw string) {
+func (k *KeywordList) AddKeyword(kw string) {
 	k.keywords[kw] = struct{}{}
 }
 
-func (k KeywordList) HasKeyword(kw string) bool {
+func (k *KeywordList) HasKeyword(kw string) bool {
 	if _, ok := k.keywords[kw]; ok {
 		return true
 	}
 	return false
 }
 
-func (k KeywordList) HasMatchingKeywords(other KeywordList) bool {
+func (k *KeywordList) HasMatchingKeywords(other KeywordList) bool {
 	if len(k.keywords) != len(other.keywords) {
 		return false
 	}
@@ -29,12 +29,12 @@ func (k KeywordList) HasMatchingKeywords(other KeywordList) bool {
 	return true
 }
 
-func (k KeywordList) Copy(other KeywordList) {
+func (k *KeywordList) Copy(other KeywordList) {
 	for key := range k.keywords {
 		k.keywords[key] = struct{}{}
 	}
 }
 
-func (k KeywordList) GenerateHash(generator HashGenerator) {
+func (k *KeywordList) GenerateHash(generator HashGenerator) {
 	// TODO
 }

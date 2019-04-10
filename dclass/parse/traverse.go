@@ -124,6 +124,9 @@ func (node TypeCapture) consume(d *dc.File) dc.BaseType {
 	default:
 		if ntype, ok := d.TypeByName(node.Name); ok {
 			builtType = *ntype
+			if _, ok := builtType.(*dc.Method); ok {
+				panic(fmt.Sprintf("ambiguous type cannot be a method at line %d", node.Pos.Line))
+			}
 		} else {
 			panic(fmt.Sprintf("type '%s' has not been declared at line %d", node.Name, node.Pos.Line))
 		}
@@ -180,16 +183,112 @@ func (node IntParameter) consume() dc.BaseType {
 	return dc.BaseType(builtType)
 }
 
+func (node FloatParameter) consume() dc.BaseType {
+	var builtType dc.BaseType
+	nodeType := dc.StringToType(node.Type)
+	numType := dc.NewNumber(nodeType)
+
+	if node.Constraint == nil {
+		node.Constraint = &Range{}
+	}
+
+	for _, trans := range node.Transforms {
+		trans.apply(numType)
+	}
+
+	numType.SetRange(node.Constraint.consume(nodeType))
+	if node.ArrayPrefix != nil && node.ArraySuffix != nil {
+		panic(fmt.Sprintf("invalid syntax at line %d", node.Pos.Line))
+	}
+
+	builtType = dc.BaseType(numType)
+	for _, bounds := range node.ArraySuffix {
+		builtType = bounds.consume(builtType)
+	}
+
+	for _, bounds := range node.ArrayPrefix {
+		builtType = bounds.consume(builtType)
+	}
+
+	return dc.BaseType(builtType)
+}
+
+func (node CharParameter) consume() dc.BaseType {
+	var builtType dc.BaseType
+	charType := dc.NewNumber(dc.T_CHAR)
+
+	if node.ArrayPrefix != nil && node.ArraySuffix != nil {
+		panic(fmt.Sprintf("invalid syntax at line %d", node.Pos.Line))
+	}
+
+	builtType = dc.BaseType(charType)
+	for _, bounds := range node.ArraySuffix {
+		builtType = bounds.consume(builtType)
+	}
+
+	for _, bounds := range node.ArrayPrefix {
+		builtType = bounds.consume(builtType)
+	}
+
+	return dc.BaseType(builtType)
+}
+
+func (node SizedParameter) consume() dc.BaseType {
+	var builtType dc.BaseType
+	nodeType := dc.StringToType(node.Type)
+	sizedType := dc.NewNumber(nodeType)
+
+	if node.Constraint == nil {
+		node.Constraint = &Range{}
+	}
+
+	sizedType.SetRange(node.Constraint.consume(nodeType))
+	if node.ArrayPrefix != nil && node.ArraySuffix != nil {
+		panic(fmt.Sprintf("invalid syntax at line %d", node.Pos.Line))
+	}
+
+	builtType = dc.BaseType(sizedType)
+	for _, bounds := range node.ArraySuffix {
+		builtType = bounds.consume(builtType)
+	}
+
+	for _, bounds := range node.ArrayPrefix {
+		builtType = bounds.consume(builtType)
+	}
+
+	return dc.BaseType(builtType)
+}
+
+func (node AmbiguousParameter) consume(d *dc.File) dc.BaseType {
+	var builtType dc.BaseType
+
+	if ntype, ok := d.TypeByName(node.Type); ok {
+		builtType = *ntype
+	} else {
+		panic(fmt.Sprintf("type '%s' has not been declared at line %d", node.Type, node.Pos.Line))
+	}
+
+	if _, ok := builtType.(*dc.Method); ok {
+		panic(fmt.Sprintf("ambiguous type cannot be a method at line %d", node.Pos.Line))
+	}
+
+	return dc.BaseType(builtType)
+}
+
 func (node Parameter) consume(d *dc.File) dc.BaseType {
 	var builtType dc.BaseType
 
 	switch true {
 	case node.Float != nil:
+		builtType = node.Float.consume()
 	case node.Char != nil:
+		builtType = node.Char.consume()
 	case node.Int != nil:
 		builtType = node.Int.consume()
 	case node.Sized != nil:
+		builtType = node.Sized.consume()
 	case node.Typed != nil:
+		builtType = node.Typed.consume(d)
 	}
 
 	return builtType
@@ -220,6 +319,13 @@ func (node Parameter) name() string {
 
 func (node AtomicField) consume(d *dc.File) dc.Field {
 	field := dc.NewAtomicField(node.Parameter.consume(d), node.Parameter.name())
+
+	if node.Keywords != nil {
+		for _, keyword := range node.Keywords.Keywords {
+			field.(*dc.AtomicField).AddKeyword(keyword)
+		}
+	}
+
 	return dc.Field(field)
 }
 
