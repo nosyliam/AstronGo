@@ -8,16 +8,17 @@ import (
 type Field interface {
 	SetName(string) error
 
-	Type() BaseType
+	FieldType() BaseType
 	Name() string
 	Id() uint
 	SetId(uint)
 
-	SetStruct(*Struct)
-	Struct() *Struct
+	SetParentStruct(*Struct)
+	ParentStruct() *Struct
 
 	HasDefaultValue() bool
-	DefaultValue() interface{}
+	SetDefaultValue([]interface{})
+	FieldDefaultValue() []interface{}
 }
 
 type AtomicField struct {
@@ -28,7 +29,7 @@ type AtomicField struct {
 	id        uint
 	name      string
 
-	defaultValue *interface{}
+	defaultValue []interface{}
 	parentStruct *Struct
 }
 
@@ -49,18 +50,19 @@ func (f *AtomicField) SetName(name string) (err error) {
 	return nil
 }
 
-func (f *AtomicField) Type() BaseType { return f.fieldType }
-func (f *AtomicField) Name() string   { return f.name }
-func (f *AtomicField) Id() uint       { return f.id }
-func (f *AtomicField) SetId(id uint)  { f.id = id }
+func (f *AtomicField) FieldType() BaseType { return f.fieldType }
+func (f *AtomicField) Name() string        { return f.name }
+func (f *AtomicField) Id() uint            { return f.id }
+func (f *AtomicField) SetId(id uint)       { f.id = id }
 
-func (f *AtomicField) SetStruct(s *Struct) { f.parentStruct = s }
-func (f *AtomicField) Struct() *Struct     { return f.parentStruct }
+func (f *AtomicField) SetParentStruct(s *Struct) { f.parentStruct = s }
+func (f *AtomicField) ParentStruct() *Struct     { return f.parentStruct }
 
-func (f *AtomicField) HasDefaultValue() bool { return f.defaultValue != nil }
-func (f *AtomicField) DefaultValue() interface{} {
+func (f *AtomicField) HasDefaultValue() bool              { return f.defaultValue != nil }
+func (f *AtomicField) SetDefaultValue(data []interface{}) { f.defaultValue = data }
+func (f *AtomicField) FieldDefaultValue() []interface{} {
 	if f.HasDefaultValue() {
-		return *f.defaultValue
+		return f.defaultValue
 	}
-	return f.fieldType.DefaultValue()
+	return append(make([]interface{}, 0), f.fieldType.DefaultValue())
 }

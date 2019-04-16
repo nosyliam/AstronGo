@@ -1,13 +1,5 @@
 typedef int16/1000 pair16[2];
 
 struct test {
-    int16 b;
-};
-
-struct Block {
-	uint32 blockX db;
-	uint32 blockY db airecv;
-	uint16/1000 blockZ;
-	string(1-100) name;
-	pair16 test;
+    int16[] b = [5*5];
 };

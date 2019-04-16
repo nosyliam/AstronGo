@@ -43,7 +43,7 @@ func (s Struct) GetFieldById(id uint) (field *Field, ok bool) {
 }
 
 func (s *Struct) AddField(field Field) (err error) {
-	if _, ok := field.(MolecularField); ok {
+	if _, ok := field.(*MolecularField); ok {
 		return errors.New("structures cannot contain molecular fields")
 	}
 
@@ -60,20 +60,20 @@ func (s *Struct) AddField(field Field) (err error) {
 		s.fieldsByName[fieldName] = field
 	}
 
-	field.SetStruct(s)
+	field.SetParentStruct(s)
 	s.file.AddField(&field)
 	s.fieldsById[field.Id()] = field
 	s.fields = append(s.fields, field)
 
 	if s.HasFixedSize() || len(s.fields) == 1 {
-		if field.Type().HasFixedSize() {
-			s.size += field.Type().Size()
+		if field.FieldType().HasFixedSize() {
+			s.size += field.FieldType().Size()
 		} else {
 			s.size = 0
 		}
 	}
 
-	s.constrained = field.Type().HasRange()
+	s.constrained = field.FieldType().HasRange()
 	return nil
 }
 

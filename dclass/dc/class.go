@@ -39,7 +39,7 @@ func (c *Class) AddField(field Field) (err error) {
 
 	fieldName := field.Name()
 	if fieldName == c.name {
-		if _, ok := field.(MolecularField); ok {
+		if _, ok := field.(*MolecularField); ok {
 			return errors.New("constructors cannot be molecular fields")
 		}
 
@@ -60,8 +60,8 @@ func (c *Class) AddField(field Field) (err error) {
 	c.baseFields[fieldName] = field
 
 	if c.HasFixedSize() || len(c.fields) == 1 {
-		if field.Type().HasFixedSize() {
-			c.size += field.Type().Size()
+		if field.FieldType().HasFixedSize() {
+			c.size += field.FieldType().Size()
 		} else {
 			c.size = 0
 		}
@@ -85,14 +85,14 @@ func (c *Class) AddInheritedField(field Field) {
 	})
 
 	if c.HasFixedSize() || len(c.fields) == 1 {
-		if field.Type().HasFixedSize() {
-			c.size += field.Type().Size()
+		if field.FieldType().HasFixedSize() {
+			c.size += field.FieldType().Size()
 		} else {
 			c.size = 0
 		}
 	}
 
-	c.constrained = field.Type().HasRange()
+	c.constrained = field.FieldType().HasRange()
 }
 
 func (c *Class) GenerateHash(generator HashGenerator) {

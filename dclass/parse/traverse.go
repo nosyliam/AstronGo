@@ -36,7 +36,12 @@ fail:
 }
 
 func (node ArrayBounds) consume(n dc.BaseType) dc.BaseType {
-	return dc.NewArray(n, node.ArrayConstraint.consume())
+	if node.ArrayConstraint != nil {
+		return dc.NewArray(n, node.ArrayConstraint.consume())
+	} else {
+		node.ArrayConstraint = &ArrayRange{}
+		return dc.NewArray(n, node.ArrayConstraint.consume())
+	}
 }
 
 func (node ArrayRange) consume() dc.NumericRange {
@@ -95,6 +100,60 @@ func (node Range) consume(dtype dc.Type) dc.NumericRange {
 	return dc.NumericRange{Type: ntype,
 		Min: dc.Number{Integer: int64(lo), Uinteger: uint64(lo), Float: lo},
 		Max: dc.Number{Integer: int64(hi), Uinteger: uint64(hi), Float: hi}}
+}
+
+func (node ArrayValue) consume(dataType dc.Type) []interface{} {
+	var value []interface{}
+	if node.String != nil {
+		value = append(value, node.String)
+	} else {
+		var convNum interface{}
+		number := node.Number.consume()
+		switch dataType {
+		case dc.T_CHAR, dc.T_INT8, dc.T_UINT8:
+			convNum = uint8(number)
+		case dc.T_INT16, dc.T_UINT16:
+			convNum = uint16(number)
+		case dc.T_INT32, dc.T_UINT32:
+			convNum = uint32(number)
+		case dc.T_FLOAT32:
+			convNum = float32(number)
+		case dc.T_INT64, dc.T_UINT64:
+			convNum = uint64(number)
+		case dc.T_FLOAT64:
+			convNum = float64(number)
+		}
+
+		if node.Multiplier != nil {
+			for i := 0; i < int(*node.Multiplier); i++ {
+				value = append(value, convNum)
+			}
+		} else {
+			value = append(value, convNum)
+		}
+	}
+
+	return value
+}
+
+func (node DefaultValue) consume(dataType dc.Type) []interface{} {
+	var defaultValue []interface{}
+
+	switch true {
+	case node.Array:
+		for _, array := range node.ArrayDefault {
+			defaultValue = append(defaultValue, array.consume(dataType))
+		}
+	case node.Integer != nil:
+		val := *node.Integer
+		if node.Negative {
+			val = -val
+		}
+
+		defaultValue = append(defaultValue, val)
+	}
+
+	return defaultValue
 }
 
 func (node TypeCapture) consume(d *dc.File) dc.BaseType {
@@ -317,8 +376,28 @@ func (node Parameter) name() string {
 	}
 }
 
+func (node Parameter) defaultValue(d *dc.File) []interface{} {
+	var defaultValue []interface{}
+
+	switch true {
+	case node.Float != nil && node.Float.Default != nil:
+		defaultValue = node.Float.Default.consume(dc.StringToType(node.Float.Type))
+	case node.Char != nil && node.Char.Default != nil:
+		defaultValue = node.Char.Default.consume(dc.StringToType(node.Char.Type))
+	case node.Int != nil && node.Int.Default != nil:
+		defaultValue = node.Int.Default.consume(dc.StringToType(node.Int.Type))
+	case node.Sized != nil && node.Sized.Default != nil:
+		defaultValue = node.Sized.Default.consume(dc.StringToType(node.Sized.Type))
+	case node.Typed != nil && node.Typed.Default != nil:
+		defaultValue = node.Typed.Default.consume(node.Typed.consume(d).Type())
+	}
+
+	return defaultValue
+}
+
 func (node AtomicField) consume(d *dc.File) dc.Field {
 	field := dc.NewAtomicField(node.Parameter.consume(d), node.Parameter.name())
+	field.SetDefaultValue(node.Parameter.defaultValue(d))
 
 	if node.Keywords != nil {
 		for _, keyword := range node.Keywords.Keywords {
@@ -349,7 +428,9 @@ func (node ClassType) traverse(d *dc.File) {
 func (node StructType) traverse(d *dc.File) {
 	strct := dc.NewStruct(node.Name, d)
 	for _, field := range node.Declarations {
-		strct.AddField(field.consume(d))
+		if err := strct.AddField(field.consume(d)); err != nil {
+			panic(fmt.Sprintf("%s at line %d", err.Error(), field.Pos.Line))
+		}
 	}
 
 	if err := d.AddStruct(strct); err != nil {

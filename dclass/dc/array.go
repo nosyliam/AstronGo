@@ -56,7 +56,7 @@ func (a *ArrayType) DefaultValue() interface{} {
 	case T_ARRAY, T_BLOB, T_STRING:
 		return make([]uint8, a.arraySize)
 	case T_VARARRAY, T_VARBLOB, T_VARSTRING:
-		return []uint8{}
+		return ""
 
 	}
 	return ""

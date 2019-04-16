@@ -10,7 +10,7 @@ type Parameter struct {
 	name      string
 	typeAlias string
 
-	defaultValue interface{}
+	defaultValue []interface{}
 	method       *Method
 }
 
@@ -48,6 +48,7 @@ func (p *Parameter) SetType(dataType BaseType) (err error) {
 func (p *Parameter) SetMethod(method *Method) { p.method = method }
 func (p *Parameter) Method() Method           { return *p.method }
 
-func (p *Parameter) HasDefaultValue() bool           { return p.defaultValue != nil }
-func (p *Parameter) SetDefaultValue(val interface{}) { p.defaultValue = &val }
-func (p *Parameter) GetDefaultValue() interface{}    { return &p.defaultValue }
+func (p *Parameter) HasDefaultValue() bool { return p.defaultValue != nil }
+func (p *Parameter) DefaultValue() interface{} {
+	return &p.defaultValue
+}
