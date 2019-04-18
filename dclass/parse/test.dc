@@ -2,4 +2,6 @@ typedef int16/1000 pair16[2];
 
 struct test {
     int16[] b = [5*5];
+    blob a = [0*7, 0*7];
+    string c = "Hello World";
 };

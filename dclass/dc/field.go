@@ -1,6 +1,8 @@
 package dc
 
 import (
+	"bytes"
+	"encoding/binary"
 	"errors"
 	"fmt"
 )
@@ -18,13 +20,11 @@ type Field interface {
 
 	HasDefaultValue() bool
 	SetDefaultValue([]interface{})
-	FieldDefaultValue() []interface{}
+	FieldDefaultValue() []byte
 }
 
-type AtomicField struct {
+type BaseField struct {
 	Field
-	KeywordList
-
 	fieldType BaseType
 	id        uint
 	name      string
@@ -33,8 +33,39 @@ type AtomicField struct {
 	parentStruct *Struct
 }
 
+func (f *BaseField) FieldType() BaseType { return f.fieldType }
+func (f *BaseField) Name() string        { return f.name }
+func (f *BaseField) Id() uint            { return f.id }
+func (f *BaseField) SetId(id uint)       { f.id = id }
+
+func (f *BaseField) SetParentStruct(s *Struct) { f.parentStruct = s }
+func (f *BaseField) ParentStruct() *Struct     { return f.parentStruct }
+
+func (f *BaseField) HasDefaultValue() bool              { return f.defaultValue != nil }
+func (f *BaseField) SetDefaultValue(data []interface{}) { f.defaultValue = data }
+func (f *BaseField) FieldDefaultValue() []byte {
+	if f.defaultValue == nil {
+		f.defaultValue = append(make([]interface{}, 0), f.fieldType.DefaultValue())
+	}
+
+	buf := new(bytes.Buffer)
+	for _, v := range f.defaultValue {
+		err := binary.Write(buf, binary.LittleEndian, v)
+		if err != nil {
+			panic(fmt.Sprintf("unable to decode field default value: %s", err))
+		}
+	}
+
+	return buf.Bytes()
+}
+
+type AtomicField struct {
+	BaseField
+	KeywordList
+}
+
 func NewAtomicField(dataType BaseType, name string) Field {
-	f := &AtomicField{fieldType: dataType, name: name}
+	f := &AtomicField{BaseField{fieldType: dataType, name: name}, KeywordList{}}
 	f.keywords = make(map[string]struct{}, 0)
 	return f
 }
@@ -48,21 +79,4 @@ func (f *AtomicField) SetName(name string) (err error) {
 
 	f.name = name
 	return nil
-}
-
-func (f *AtomicField) FieldType() BaseType { return f.fieldType }
-func (f *AtomicField) Name() string        { return f.name }
-func (f *AtomicField) Id() uint            { return f.id }
-func (f *AtomicField) SetId(id uint)       { f.id = id }
-
-func (f *AtomicField) SetParentStruct(s *Struct) { f.parentStruct = s }
-func (f *AtomicField) ParentStruct() *Struct     { return f.parentStruct }
-
-func (f *AtomicField) HasDefaultValue() bool              { return f.defaultValue != nil }
-func (f *AtomicField) SetDefaultValue(data []interface{}) { f.defaultValue = data }
-func (f *AtomicField) FieldDefaultValue() []interface{} {
-	if f.HasDefaultValue() {
-		return f.defaultValue
-	}
-	return append(make([]interface{}, 0), f.fieldType.DefaultValue())
 }

@@ -36,12 +36,10 @@ fail:
 }
 
 func (node ArrayBounds) consume(n dc.BaseType) dc.BaseType {
-	if node.ArrayConstraint != nil {
-		return dc.NewArray(n, node.ArrayConstraint.consume())
-	} else {
+	if node.ArrayConstraint == nil {
 		node.ArrayConstraint = &ArrayRange{}
-		return dc.NewArray(n, node.ArrayConstraint.consume())
 	}
+	return dc.NewArray(n, node.ArrayConstraint.consume())
 }
 
 func (node ArrayRange) consume() dc.NumericRange {
@@ -122,6 +120,8 @@ func (node ArrayValue) consume(dataType dc.Type) []interface{} {
 			convNum = uint64(number)
 		case dc.T_FLOAT64:
 			convNum = float64(number)
+		default:
+			convNum = uint8(number)
 		}
 
 		if node.Multiplier != nil {
@@ -139,7 +139,7 @@ func (node ArrayValue) consume(dataType dc.Type) []interface{} {
 func (node DefaultValue) consume(dataType dc.Type) []interface{} {
 	var defaultValue []interface{}
 
-	switch true {
+	switch {
 	case node.Array:
 		for _, array := range node.ArrayDefault {
 			defaultValue = append(defaultValue, array.consume(dataType))
@@ -151,6 +151,15 @@ func (node DefaultValue) consume(dataType dc.Type) []interface{} {
 		}
 
 		defaultValue = append(defaultValue, val)
+	case node.Float != nil:
+		val := *node.Float
+		if node.Negative {
+			val = -val
+		}
+
+		defaultValue = append(defaultValue, val)
+	case node.String != nil:
+		defaultValue = append(defaultValue, *node.String)
 	}
 
 	return defaultValue
@@ -337,7 +346,7 @@ func (node AmbiguousParameter) consume(d *dc.File) dc.BaseType {
 func (node Parameter) consume(d *dc.File) dc.BaseType {
 	var builtType dc.BaseType
 
-	switch true {
+	switch {
 	case node.Float != nil:
 		builtType = node.Float.consume()
 	case node.Char != nil:
@@ -356,7 +365,7 @@ func (node Parameter) consume(d *dc.File) dc.BaseType {
 func (node Parameter) name() string {
 	var str *string
 
-	switch true {
+	switch {
 	case node.Float != nil:
 		str = node.Float.Identifier
 	case node.Char != nil:
@@ -379,7 +388,7 @@ func (node Parameter) name() string {
 func (node Parameter) defaultValue(d *dc.File) []interface{} {
 	var defaultValue []interface{}
 
-	switch true {
+	switch {
 	case node.Float != nil && node.Float.Default != nil:
 		defaultValue = node.Float.Default.consume(dc.StringToType(node.Float.Type))
 	case node.Char != nil && node.Char.Default != nil:
@@ -439,7 +448,7 @@ func (node StructType) traverse(d *dc.File) {
 }
 
 func (node TypeDecl) traverse(d *dc.File) {
-	switch true {
+	switch {
 	case node.Keyword != nil:
 		d.AddKeyword(node.Keyword.Name)
 	case node.Import != nil:
