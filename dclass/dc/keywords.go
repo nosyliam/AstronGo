@@ -30,7 +30,7 @@ func (k *KeywordList) HasMatchingKeywords(other KeywordList) bool {
 }
 
 func (k *KeywordList) Copy(other KeywordList) {
-	for key := range k.keywords {
+	for key := range other.keywords {
 		k.keywords[key] = struct{}{}
 	}
 }

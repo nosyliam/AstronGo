@@ -436,9 +436,19 @@ func (node MethodField) consume(d *dc.File) dc.Field {
 	return field
 }
 
-func (node MolecularField) consume(d *dc.File) dc.Field {
+func (node MolecularField) consume(cls *dc.Class) dc.Field {
 	field := dc.NewMolecularField(node.Name)
-	return dc.Field(field)
+	for _, child := range node.Fields {
+		if f, ok := cls.GetFieldByName(child); ok {
+			if err := field.AddField(*f); err != nil {
+				panic(fmt.Sprintf("%s at line %d", err.Error(), node.Pos.Line))
+			}
+		} else {
+			panic(fmt.Sprintf("unknown molecular field %s at line %d", child, node.Pos.Line))
+		}
+	}
+
+	return field
 }
 
 func (node AtomicField) consume(d *dc.File) dc.Field {
@@ -454,13 +464,14 @@ func (node AtomicField) consume(d *dc.File) dc.Field {
 	return field
 }
 
-func (node FieldDecl) consume(d *dc.File) dc.Field {
+func (node FieldDecl) consume(d *dc.File, cls *dc.Class) dc.Field {
 	var builtType dc.Field
 
 	switch true {
 	case node.Method != nil:
 		builtType = node.Method.consume(d)
 	case node.Molecular != nil:
+		builtType = node.Molecular.consume(cls)
 	case node.Atomic != nil:
 		builtType = node.Atomic.consume(d)
 	}
@@ -479,7 +490,7 @@ func (node ClassType) traverse(d *dc.File) {
 	}
 
 	for _, field := range node.Declarations {
-		if err := class.AddField(field.consume(d)); err != nil {
+		if err := class.AddField(field.consume(d, class)); err != nil {
 			panic(fmt.Sprintf("%s at line %d", err.Error(), field.Pos.Line))
 		}
 	}
@@ -492,7 +503,7 @@ func (node ClassType) traverse(d *dc.File) {
 func (node StructType) traverse(d *dc.File) {
 	strct := dc.NewStruct(node.Name, d)
 	for _, field := range node.Declarations {
-		if err := strct.AddField(field.consume(d)); err != nil {
+		if err := strct.AddField(field.consume(d, nil)); err != nil {
 			panic(fmt.Sprintf("%s at line %d", err.Error(), field.Pos.Line))
 		}
 	}

@@ -9,8 +9,9 @@ type MolecularField struct {
 
 func NewMolecularField(name string) *MolecularField {
 	m := &MolecularField{}
+	m.keywords = make(map[string]struct{}, 0)
+	m.fieldType = BaseType(m)
 	m.BaseField.name = name
-	m.BaseField.fieldType = BaseType(m)
 	return m
 }
 
@@ -36,4 +37,8 @@ func (m *MolecularField) AddField(field Field) (err error) {
 	}
 
 	return nil
+}
+
+func (m *MolecularField) GenerateHash(generator HashGenerator) {
+	// TODO
 }

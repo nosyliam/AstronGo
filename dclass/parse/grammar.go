@@ -56,9 +56,9 @@ type DefaultValue struct {
 type CharParameter struct {
 	Pos         lexer.Position
 	Type        string         `@"char"`
-	ArrayPrefix []*ArrayBounds `@@ @@`
+	ArrayPrefix []*ArrayBounds `[ @@ { @@ } ]`
 	Identifier  *string        `[ @Ident ]`
-	ArraySuffix []*ArrayBounds `@@ @@`
+	ArraySuffix []*ArrayBounds `[ @@ { @@ } ]`
 	Default     *DefaultValue  `[ '=' @@ ]`
 }
 

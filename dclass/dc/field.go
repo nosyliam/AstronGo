@@ -83,3 +83,7 @@ func (f *AtomicField) SetName(name string) (err error) {
 	f.name = name
 	return nil
 }
+
+func (f *AtomicField) GenerateHash(generator HashGenerator) {
+	// TODO
+}
