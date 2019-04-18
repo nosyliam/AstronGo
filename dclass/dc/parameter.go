@@ -14,15 +14,14 @@ type Parameter struct {
 	method       *Method
 }
 
-func NewParameter(dataType BaseType, name string) *Parameter {
-	p := &Parameter{dataType: dataType, name: name}
-
+func NewParameter(method *Method) *Parameter {
+	p := &Parameter{method: method}
 	return p
 }
 
 func (p *Parameter) SetName(name string) (err error) {
 	if p.method != nil {
-		if _, err := p.method.GetParameterByName(name); err != nil {
+		if _, ok := p.method.GetParameterByName(name); ok != nil {
 			return errors.New(fmt.Sprintf("parameter %s already exists in parent method", name))
 		}
 	}
@@ -48,7 +47,9 @@ func (p *Parameter) SetType(dataType BaseType) (err error) {
 func (p *Parameter) SetMethod(method *Method) { p.method = method }
 func (p *Parameter) Method() Method           { return *p.method }
 
+func (p *Parameter) Type() BaseType { return p.dataType }
+
 func (p *Parameter) HasDefaultValue() bool { return p.defaultValue != nil }
-func (p *Parameter) DefaultValue() interface{} {
-	return &p.defaultValue
+func (p *Parameter) DefaultValue() []interface{} {
+	return p.defaultValue
 }

@@ -23,23 +23,23 @@ func NewMethod() *Method {
 	return m
 }
 
-func (m Method) GetParameterByName(name string) (ok *Parameter, err error) {
+func (m Method) GetParameterByName(name string) (err error, ok *Parameter) {
 	if val, ok := m.parametersByName[name]; ok {
-		return &val, nil
+		return nil, &val
 	}
-	return nil, errors.New(fmt.Sprintf("unable to index field `%s`", name))
+	return errors.New(fmt.Sprintf("unable to index field `%s`", name)), nil
 }
-func (m *Method) AddParameter(param Parameter) (err error) {
+func (m *Method) AddParameter(param *Parameter) (err error) {
 	if len(param.name) != 0 {
 		if _, ok := m.parametersByName[param.name]; ok {
 			return errors.New(fmt.Sprintf("parameter with name `%s` already exists", param.name))
 		}
 
-		m.parametersByName[param.name] = param
+		m.parametersByName[param.name] = *param
 	}
 
 	param.SetMethod(m)
-	m.parameters = append(m.parameters, param)
+	m.parameters = append(m.parameters, *param)
 
 	if m.HasFixedSize() || len(m.parameters) == 1 {
 		if param.dataType.HasFixedSize() {
@@ -48,6 +48,7 @@ func (m *Method) AddParameter(param Parameter) (err error) {
 			m.size = 0
 		}
 	}
+
 	return nil
 }
 

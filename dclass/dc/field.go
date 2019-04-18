@@ -13,6 +13,7 @@ type Field interface {
 	FieldType() BaseType
 	Name() string
 	Id() uint
+	Keywords() KeywordList
 	SetId(uint)
 
 	SetParentStruct(*Struct)
@@ -25,6 +26,8 @@ type Field interface {
 
 type BaseField struct {
 	Field
+	KeywordList
+
 	fieldType BaseType
 	id        uint
 	name      string
@@ -33,10 +36,11 @@ type BaseField struct {
 	parentStruct *Struct
 }
 
-func (f *BaseField) FieldType() BaseType { return f.fieldType }
-func (f *BaseField) Name() string        { return f.name }
-func (f *BaseField) Id() uint            { return f.id }
-func (f *BaseField) SetId(id uint)       { f.id = id }
+func (f *BaseField) FieldType() BaseType   { return f.fieldType }
+func (f *BaseField) Name() string          { return f.name }
+func (f *BaseField) Id() uint              { return f.id }
+func (f *BaseField) Keywords() KeywordList { return f.KeywordList }
+func (f *BaseField) SetId(id uint)         { f.id = id }
 
 func (f *BaseField) SetParentStruct(s *Struct) { f.parentStruct = s }
 func (f *BaseField) ParentStruct() *Struct     { return f.parentStruct }
@@ -61,11 +65,10 @@ func (f *BaseField) FieldDefaultValue() []byte {
 
 type AtomicField struct {
 	BaseField
-	KeywordList
 }
 
 func NewAtomicField(dataType BaseType, name string) Field {
-	f := &AtomicField{BaseField{fieldType: dataType, name: name}, KeywordList{}}
+	f := &AtomicField{BaseField{fieldType: dataType, name: name}}
 	f.keywords = make(map[string]struct{}, 0)
 	return f
 }

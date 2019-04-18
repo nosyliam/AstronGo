@@ -404,6 +404,43 @@ func (node Parameter) defaultValue(d *dc.File) []interface{} {
 	return defaultValue
 }
 
+func (node MethodField) consume(d *dc.File) dc.Field {
+	var defaultValue []interface{}
+	method := dc.NewMethod()
+	for _, p := range node.Parameters {
+		param := dc.NewParameter(method)
+		if err := param.SetName(p.name()); err != nil {
+			panic(fmt.Sprintf("%s at line %d column %d", err.Error(), p.Pos.Line, p.Pos.Column))
+		}
+
+		if err := param.SetType(p.consume(d)); err != nil {
+			panic(fmt.Sprintf("%s at line %d column %d", err.Error(), p.Pos.Line, p.Pos.Column))
+		}
+
+		if err := method.AddParameter(param); err != nil {
+			panic(fmt.Sprintf("%s at line %d", err.Error(), p.Pos.Line))
+		}
+
+		defaultValue = append(defaultValue, p.defaultValue(d))
+	}
+
+	field := dc.NewAtomicField(method, node.Name)
+	field.SetDefaultValue(defaultValue)
+
+	if node.Keywords != nil {
+		for _, keyword := range node.Keywords.Keywords {
+			field.(*dc.AtomicField).AddKeyword(keyword)
+		}
+	}
+
+	return field
+}
+
+func (node MolecularField) consume(d *dc.File) dc.Field {
+	field := dc.NewMolecularField(node.Name)
+	return dc.Field(field)
+}
+
 func (node AtomicField) consume(d *dc.File) dc.Field {
 	field := dc.NewAtomicField(node.Parameter.consume(d), node.Parameter.name())
 	field.SetDefaultValue(node.Parameter.defaultValue(d))
@@ -414,7 +451,7 @@ func (node AtomicField) consume(d *dc.File) dc.Field {
 		}
 	}
 
-	return dc.Field(field)
+	return field
 }
 
 func (node FieldDecl) consume(d *dc.File) dc.Field {
@@ -422,6 +459,7 @@ func (node FieldDecl) consume(d *dc.File) dc.Field {
 
 	switch true {
 	case node.Method != nil:
+		builtType = node.Method.consume(d)
 	case node.Molecular != nil:
 	case node.Atomic != nil:
 		builtType = node.Atomic.consume(d)
@@ -431,7 +469,24 @@ func (node FieldDecl) consume(d *dc.File) dc.Field {
 }
 
 func (node ClassType) traverse(d *dc.File) {
+	class := dc.NewClass(node.Name, d)
+	for _, parent := range node.Parents {
+		if parentClass, ok := d.ClassByName(parent); ok {
+			class.AddParent(*parentClass)
+		} else {
+			panic(fmt.Sprintf("parent class '%s' has not been declared at line %d", parent, node.Pos.Line))
+		}
+	}
 
+	for _, field := range node.Declarations {
+		if err := class.AddField(field.consume(d)); err != nil {
+			panic(fmt.Sprintf("%s at line %d", err.Error(), field.Pos.Line))
+		}
+	}
+
+	if err := d.AddClass(class); err != nil {
+		panic(fmt.Sprintf("cannot add class '%s' at line %d as a type was already declared with that name", node.Name, node.Pos.Line))
+	}
 }
 
 func (node StructType) traverse(d *dc.File) {
@@ -457,6 +512,7 @@ func (node TypeDecl) traverse(d *dc.File) {
 	case node.Struct != nil:
 		node.Struct.traverse(d)
 	case node.Class != nil:
+		node.Class.traverse(d)
 	default:
 		panic(fmt.Sprintf("malformed declaration at line %d", node.Pos.Line))
 	}

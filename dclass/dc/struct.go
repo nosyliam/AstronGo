@@ -44,6 +44,10 @@ func (s Struct) GetFieldById(id uint) (field *Field, ok bool) {
 
 func (s *Struct) AddField(field Field) (err error) {
 	if _, ok := field.(*MolecularField); ok {
+		return errors.New("structures cannot contain methods")
+	}
+
+	if _, ok := field.(*MolecularField); ok {
 		return errors.New("structures cannot contain molecular fields")
 	}
 

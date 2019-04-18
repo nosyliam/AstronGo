@@ -90,6 +90,7 @@ func (f *File) AddClass(class *Class) (err error) {
 	class.id = uint(len(f.types))
 	f.types = append(f.types, BaseType(class))
 	f.classes = append(f.classes, class)
+	f.typesByName[class.name] = BaseType(class)
 	return nil
 }
 
@@ -122,6 +123,7 @@ func (f *File) AddStruct(strct *Struct) (err error) {
 	strct.id = uint(len(f.types))
 	f.types = append(f.types, BaseType(strct))
 	f.structs = append(f.structs, strct)
+	f.typesByName[strct.name] = BaseType(strct)
 	return nil
 }
 

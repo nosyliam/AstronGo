@@ -9,18 +9,20 @@ import (
 type Class struct {
 	Struct
 
-	file File
+	file *File
 
 	baseFields map[string]Field
 	parents    []Class
 }
 
-func NewClass(file File, name string) *Class {
+func NewClass(name string, file *File) *Class {
 	c := &Class{file: file}
 	c.dataType = T_STRUCT
 	c.name = name
 
 	c.baseFields = make(map[string]Field, 0)
+	c.fieldsByName = make(map[string]Field, 0)
+	c.fieldsById = make(map[uint]Field, 0)
 	return c
 }
 
