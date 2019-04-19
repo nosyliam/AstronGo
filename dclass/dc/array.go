@@ -61,6 +61,14 @@ func (a *ArrayType) DefaultValue() interface{} {
 	}
 	return ""
 }
-func (a *ArrayType) GenerateHash(generator HashGenerator) {
-	// TODO
+func (a *ArrayType) GenerateHash(generator *HashGenerator) {
+	a.DistributedType.GenerateHash(generator)
+	a.elemType.GenerateHash(generator)
+
+	if a.HasRange() {
+		generator.AddInt(int(a.arrayRange.Min.Integer))
+		generator.AddInt(int(a.arrayRange.Max.Integer))
+	} else {
+		generator.AddInt(int(a.arraySize))
+	}
 }

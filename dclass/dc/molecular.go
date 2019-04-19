@@ -39,6 +39,12 @@ func (m *MolecularField) AddField(field Field) (err error) {
 	return nil
 }
 
-func (m *MolecularField) GenerateHash(generator HashGenerator) {
-	// TODO
+func (m *MolecularField) GenerateHash(generator *HashGenerator) {
+	generator.AddInt(int(m.BaseField.id))
+	generator.AddString(m.BaseField.name)
+
+	generator.AddInt(len(m.fields))
+	for _, field := range m.fields {
+		generator.AddInt(int(field.Id()))
+	}
 }

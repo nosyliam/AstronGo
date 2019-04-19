@@ -81,6 +81,11 @@ func (s *Struct) AddField(field Field) (err error) {
 	return nil
 }
 
-func (s *Struct) GenerateHash(generator HashGenerator) {
-
+func (s *Struct) GenerateHash(generator *HashGenerator) {
+	s.DistributedType.GenerateHash(generator)
+	generator.AddString(s.name)
+	generator.AddInt(len(s.fields))
+	for _, field := range s.fields {
+		field.GenerateHash(generator)
+	}
 }

@@ -53,3 +53,7 @@ func (p *Parameter) HasDefaultValue() bool { return p.defaultValue != nil }
 func (p *Parameter) DefaultValue() []interface{} {
 	return p.defaultValue
 }
+
+func (p *Parameter) GenerateHash(generator *HashGenerator) {
+	p.dataType.GenerateHash(generator)
+}

@@ -218,6 +218,16 @@ func (n *NumericType) DefaultValue() interface{} {
 
 	return 0
 }
-func (n *NumericType) GenerateHash(generator HashGenerator) {
-	// TODO
+func (n *NumericType) GenerateHash(generator *HashGenerator) {
+	n.DistributedType.GenerateHash(generator)
+	generator.AddInt(int(n.Divisor))
+
+	if n.Modulus != 0 {
+		generator.AddInt(int(n.calculatedModulus.Integer))
+	}
+
+	if n.HasRange() {
+		generator.AddInt(int(n.calculatedRange.Min.Integer))
+		generator.AddInt(int(n.calculatedRange.Max.Integer))
+	}
 }

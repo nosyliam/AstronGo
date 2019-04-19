@@ -3,8 +3,7 @@ package dc
 type Type int
 
 const (
-	T_INVALID Type = iota
-	T_INT8
+	T_INT8 Type = iota
 	T_INT16
 	T_INT32
 	T_INT64
@@ -25,6 +24,8 @@ const (
 
 	T_STRUCT
 	T_METHOD
+
+	T_INVALID
 )
 
 func StringToType(s string) Type {
@@ -78,7 +79,7 @@ type BaseType interface {
 	HasFixedSize() bool
 	Size() Sizetag_t
 
-	GenerateHash(HashGenerator)
+	GenerateHash(*HashGenerator)
 }
 
 type DistributedType struct {
@@ -100,6 +101,9 @@ func (d *DistributedType) DefaultValue() interface{} {
 	return ""
 }
 
-func (d *DistributedType) GenerateHash(generator HashGenerator) {
-	// todo
+func (d *DistributedType) GenerateHash(generator *HashGenerator) {
+	generator.AddInt(int(d.dataType))
+	if d.alias != "" {
+		generator.AddString(d.alias)
+	}
 }

@@ -35,6 +35,9 @@ func (k *KeywordList) Copy(other KeywordList) {
 	}
 }
 
-func (k *KeywordList) GenerateHash(generator HashGenerator) {
-	// TODO
+func (k *KeywordList) GenerateHash(generator *HashGenerator) {
+	generator.AddInt(len(k.keywords))
+	for key := range k.keywords {
+		generator.AddString(key)
+	}
 }

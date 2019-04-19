@@ -22,6 +22,8 @@ type Field interface {
 	HasDefaultValue() bool
 	SetDefaultValue([]interface{})
 	FieldDefaultValue() []byte
+
+	GenerateHash(*HashGenerator)
 }
 
 type BaseField struct {
@@ -84,6 +86,10 @@ func (f *AtomicField) SetName(name string) (err error) {
 	return nil
 }
 
-func (f *AtomicField) GenerateHash(generator HashGenerator) {
-	// TODO
+func (f *AtomicField) GenerateHash(generator *HashGenerator) {
+	generator.AddInt(int(f.id))
+	generator.AddString(f.name)
+
+	f.fieldType.GenerateHash(generator)
+	f.KeywordList.GenerateHash(generator)
 }

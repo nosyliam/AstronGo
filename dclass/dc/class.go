@@ -11,8 +11,9 @@ type Class struct {
 
 	file *File
 
-	baseFields map[string]Field
-	parents    []Class
+	baseFields  map[string]Field
+	constructor Field
+	parents     []Class
 }
 
 func NewClass(name string, file *File) *Class {
@@ -41,6 +42,10 @@ func (c *Class) AddField(field Field) (err error) {
 
 	fieldName := field.Name()
 	if fieldName == c.name {
+		if c.constructor != nil {
+			return errors.New("class already has a constructor")
+		}
+
 		if _, ok := field.(*MolecularField); ok {
 			return errors.New("constructors cannot be molecular fields")
 		}
@@ -48,6 +53,14 @@ func (c *Class) AddField(field Field) (err error) {
 		if len(c.baseFields) > 0 {
 			return errors.New("constructor must be the first field in a class")
 		}
+
+		c.file.AddField(&field)
+		c.constructor = field
+
+		c.fieldsById[field.Id()] = field
+		c.fieldsByName[fieldName] = field
+		c.baseFields[fieldName] = field
+		return nil
 	}
 
 	if _, ok := c.baseFields[fieldName]; ok {
@@ -97,6 +110,21 @@ func (c *Class) AddInheritedField(field Field) {
 	c.constrained = field.FieldType().HasRange()
 }
 
-func (c *Class) GenerateHash(generator HashGenerator) {
-	// TODO
+func (c *Class) GenerateHash(generator *HashGenerator) {
+	c.DistributedType.GenerateHash(generator)
+	generator.AddString(c.name)
+
+	generator.AddInt(len(c.parents))
+	for _, parent := range c.parents {
+		generator.AddInt(int(parent.id))
+	}
+
+	if c.constructor != nil {
+		c.constructor.GenerateHash(generator)
+	}
+
+	generator.AddInt(len(c.baseFields))
+	for _, field := range c.baseFields {
+		field.GenerateHash(generator)
+	}
 }

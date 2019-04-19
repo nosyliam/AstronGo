@@ -39,6 +39,7 @@ func (node ArrayBounds) consume(n dc.BaseType) dc.BaseType {
 	if node.ArrayConstraint == nil {
 		node.ArrayConstraint = &ArrayRange{}
 	}
+
 	return dc.NewArray(n, node.ArrayConstraint.consume())
 }
 
@@ -71,6 +72,10 @@ func (node ArrayRange) consume() dc.NumericRange {
 func (node Range) consume(dtype dc.Type) dc.NumericRange {
 	var ntype dc.NumberType
 	var lo, hi float64
+
+	if node.Lo == nil && node.Hi == nil {
+		return dc.NumericRange{Type: dc.NONE}
+	}
 
 	switch dtype {
 	case dc.T_INT8, dc.T_INT16, dc.T_INT32, dc.T_INT64, dc.T_CHAR:
@@ -531,6 +536,16 @@ func (node TypeDecl) traverse(d *dc.File) {
 
 func (d DCFile) traverse() *dc.File {
 	file := dc.NewFile()
+	file.AddKeyword("required")
+	file.AddKeyword("ram")
+	file.AddKeyword("db")
+	file.AddKeyword("broadcast")
+	file.AddKeyword("clrecv")
+	file.AddKeyword("clsend")
+	file.AddKeyword("ownsend")
+	file.AddKeyword("ownrecv")
+	file.AddKeyword("airecv")
+
 	for _, declaration := range d.Declarations {
 		declaration.traverse(file)
 	}
