@@ -71,7 +71,6 @@ type AtomicField struct {
 
 func NewAtomicField(dataType BaseType, name string) Field {
 	f := &AtomicField{BaseField{fieldType: dataType, name: name}}
-	f.keywords = make(map[string]struct{}, 0)
 	return f
 }
 
@@ -87,9 +86,17 @@ func (f *AtomicField) SetName(name string) (err error) {
 }
 
 func (f *AtomicField) GenerateHash(generator *HashGenerator) {
-	generator.AddInt(int(f.id))
-	generator.AddString(f.name)
+	if f.fieldType.Type() == T_METHOD {
+		generator.AddString(f.name)
+		generator.AddInt(int(f.id))
+		f.fieldType.GenerateHash(generator)
+		f.KeywordList.GenerateHash(generator)
+	} else {
+		if len(f.KeywordList.keywords) != 0 {
+			f.KeywordList.GenerateHash(generator)
+		}
 
-	f.fieldType.GenerateHash(generator)
-	f.KeywordList.GenerateHash(generator)
+		f.fieldType.GenerateHash(generator)
+	}
+
 }

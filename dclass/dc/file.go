@@ -19,7 +19,6 @@ type File struct {
 
 func NewFile() *File {
 	f := File{}
-	f.keywords = make(map[string]struct{}, 0)
 	f.typedefs = make(map[string]BaseType, 0)
 	f.typesByName = make(map[string]BaseType, 0)
 
@@ -122,18 +121,15 @@ func (f *File) AddField(field *Field) /* cannot throw an error */ {
 }
 
 func (f File) GenerateHash(generator *HashGenerator) {
-	generator.AddInt(len(f.classes))
-	for _, class := range f.classes {
-		class.GenerateHash(generator)
+	generator.AddInt(1)
+	generator.AddInt(len(f.classes) + len(f.structs))
+
+	for _, tp := range f.types {
+		if strct, ok := tp.(*Struct); ok {
+			strct.GenerateHash(generator)
+		} else {
+			tp.(*Class).GenerateHash(generator)
+		}
 	}
 
-	generator.AddInt(len(f.structs))
-	for _, strct := range f.structs {
-		strct.GenerateHash(generator)
-	}
-
-	generator.AddInt(len(f.keywords))
-	for keyword := range f.keywords {
-		generator.AddString(keyword)
-	}
 }

@@ -7,25 +7,29 @@ const (
 	T_INT16
 	T_INT32
 	T_INT64
+
 	T_UINT8
 	T_UINT16
 	T_UINT32
 	T_UINT64
-	T_CHAR
-	T_FLOAT32
+
 	T_FLOAT64
 
 	T_STRING
-	T_VARSTRING
 	T_BLOB
+
+	T_CHAR = 19
+
+	T_INVALID = iota + 8
+
+	T_FLOAT32
+	T_VARSTRING
 	T_VARBLOB
 	T_ARRAY
 	T_VARARRAY
 
 	T_STRUCT
 	T_METHOD
-
-	T_INVALID
 )
 
 func StringToType(s string) Type {

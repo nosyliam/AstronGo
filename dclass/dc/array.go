@@ -48,7 +48,7 @@ func NewArray(elem BaseType, rng NumericRange) *ArrayType {
 func (a *ArrayType) ArraySize() uint       { return a.arraySize }
 func (a *ArrayType) ElementType() BaseType { return a.elemType }
 
-func (a *ArrayType) HasRange() bool      { return a.arrayRange.IsEmpty() }
+func (a *ArrayType) HasRange() bool      { return !a.arrayRange.IsEmpty() }
 func (a *ArrayType) Range() NumericRange { return a.arrayRange }
 
 func (a *ArrayType) DefaultValue() interface{} {
@@ -62,13 +62,30 @@ func (a *ArrayType) DefaultValue() interface{} {
 	return ""
 }
 func (a *ArrayType) GenerateHash(generator *HashGenerator) {
-	a.DistributedType.GenerateHash(generator)
-	a.elemType.GenerateHash(generator)
+	switch a.dataType {
+	case T_ARRAY, T_VARARRAY:
+		a.elemType.GenerateHash(generator)
+	case T_BLOB, T_VARBLOB:
+		if a.elemType.Alias() == "blob" {
+			generator.AddInt(int(T_BLOB))
+		} else {
+			generator.AddInt(int(T_UINT8))
+		}
+
+		generator.AddInt(1)
+	case T_STRING, T_VARSTRING:
+		if a.elemType.Alias() == "string" {
+			generator.AddInt(int(T_STRING))
+		} else {
+			generator.AddInt(int(T_CHAR))
+		}
+
+		generator.AddInt(1)
+	}
 
 	if a.HasRange() {
-		generator.AddInt(int(a.arrayRange.Min.Integer))
-		generator.AddInt(int(a.arrayRange.Max.Integer))
-	} else {
-		generator.AddInt(int(a.arraySize))
+		generator.AddInt(1)
+		generator.AddInt(int(a.arrayRange.Min.Uinteger))
+		generator.AddInt(int(a.arrayRange.Max.Uinteger))
 	}
 }

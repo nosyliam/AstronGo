@@ -53,8 +53,6 @@ func (m *Method) AddParameter(param *Parameter) (err error) {
 }
 
 func (m *Method) GenerateHash(generator *HashGenerator) {
-	m.DistributedType.GenerateHash(generator)
-
 	generator.AddInt(len(m.parameters))
 	for _, parameter := range m.parameters {
 		parameter.GenerateHash(generator)

@@ -80,7 +80,7 @@ func (node Range) consume(dtype dc.Type) dc.NumericRange {
 	switch dtype {
 	case dc.T_INT8, dc.T_INT16, dc.T_INT32, dc.T_INT64, dc.T_CHAR:
 		ntype = dc.INT
-	case dc.T_UINT8, dc.T_UINT16, dc.T_UINT32, dc.T_UINT64:
+	case dc.T_UINT8, dc.T_UINT16, dc.T_UINT32, dc.T_UINT64, dc.T_STRING, dc.T_BLOB:
 		ntype = dc.UINT
 	case dc.T_FLOAT32, dc.T_FLOAT64:
 		ntype = dc.FLOAT
@@ -309,13 +309,22 @@ func (node CharParameter) consume() dc.BaseType {
 func (node SizedParameter) consume() dc.BaseType {
 	var builtType dc.BaseType
 	nodeType := dc.StringToType(node.Type)
-	sizedType := dc.NewNumber(nodeType)
+	var elemType dc.BaseType
+	switch nodeType {
+	case dc.T_STRING:
+		elemType = dc.NewNumber(dc.T_CHAR)
+		elemType.SetAlias("string")
+	case dc.T_BLOB:
+		elemType = dc.NewNumber(dc.T_UINT8)
+		elemType.SetAlias("blob")
+	}
 
 	if node.Constraint == nil {
 		node.Constraint = &Range{}
 	}
 
-	sizedType.SetRange(node.Constraint.consume(nodeType))
+	sizedType := dc.NewArray(elemType, node.Constraint.consume(nodeType))
+
 	if node.ArrayPrefix != nil && node.ArraySuffix != nil {
 		panic(fmt.Sprintf("invalid syntax at line %d", node.Pos.Line))
 	}
@@ -343,6 +352,11 @@ func (node AmbiguousParameter) consume(d *dc.File) dc.BaseType {
 
 	if _, ok := builtType.(*dc.Method); ok {
 		panic(fmt.Sprintf("ambiguous type cannot be a method at line %d", node.Pos.Line))
+	}
+
+	builtType = dc.BaseType(builtType)
+	for _, bounds := range node.ArrayConstraint {
+		builtType = bounds.consume(builtType)
 	}
 
 	return dc.BaseType(builtType)
@@ -536,15 +550,6 @@ func (node TypeDecl) traverse(d *dc.File) {
 
 func (d DCFile) traverse() *dc.File {
 	file := dc.NewFile()
-	file.AddKeyword("required")
-	file.AddKeyword("ram")
-	file.AddKeyword("db")
-	file.AddKeyword("broadcast")
-	file.AddKeyword("clrecv")
-	file.AddKeyword("clsend")
-	file.AddKeyword("ownsend")
-	file.AddKeyword("ownrecv")
-	file.AddKeyword("airecv")
 
 	for _, declaration := range d.Declarations {
 		declaration.traverse(file)

@@ -2,9 +2,10 @@ package parse
 
 import (
 	"astrongo/dclass/dc"
-	"fmt"
 	"testing"
 )
+
+const DC_HASH = 0xb77baf2
 
 func TestTraverse(t *testing.T) {
 	dct, err := ParseFile("dclass/parse/test.dc")
@@ -15,5 +16,8 @@ func TestTraverse(t *testing.T) {
 	dcf := dct.traverse()
 	hashgen := dc.NewHashGenerator()
 	dcf.GenerateHash(hashgen)
-	fmt.Printf("Hash: %d", hashgen.Hash())
+	hash := hashgen.Hash()
+	if hash != DC_HASH {
+		t.Fatalf("test dclass dc mismatch: 0x%x", hash)
+	}
 }

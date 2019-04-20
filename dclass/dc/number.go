@@ -126,31 +126,31 @@ func (n *NumericType) SetDivisor(divisor uint32) (ok bool) {
 }
 
 func (n *NumericType) SetModulus(modulus float64) (ok bool) {
-	uint_mod := uint64(math.Floor(modulus * float64(n.Divisor)))
-	if modulus <= 0.0 {
+	uint_mod := uint64(math.Floor(modulus*float64(n.Divisor) + 0.5))
+	if modulus <= 0 {
 		return false
 	}
 
 	switch n.dataType {
-	case T_CHAR, T_UINT8:
+	case T_CHAR, T_UINT8, T_INT8:
 		if uint_mod < 1 || uint64(^uint8(0))+1 < uint_mod {
 			return false
 		}
 		n.calculatedModulus.Uinteger = uint_mod
 		break
-	case T_UINT16:
+	case T_UINT16, T_INT16:
 		if uint_mod < 1 || uint64(^uint16(0))+1 < uint_mod {
 			return false
 		}
 		n.calculatedModulus.Uinteger = uint_mod
 		break
-	case T_UINT32:
+	case T_UINT32, T_INT32:
 		if uint_mod < 1 || uint64(^uint32(0))+1 < uint_mod {
 			return false
 		}
 		n.calculatedModulus.Uinteger = uint_mod
 		break
-	case T_UINT64:
+	case T_UINT64, T_INT64:
 		if uint_mod < 1 {
 			return false
 		}
@@ -218,16 +218,20 @@ func (n *NumericType) DefaultValue() interface{} {
 
 	return 0
 }
+
+func (n *NumericType) HasRange() bool { return !n.Range.IsEmpty() }
+
 func (n *NumericType) GenerateHash(generator *HashGenerator) {
-	n.DistributedType.GenerateHash(generator)
+	generator.AddInt(int(n.dataType))
 	generator.AddInt(int(n.Divisor))
 
 	if n.Modulus != 0 {
-		generator.AddInt(int(n.calculatedModulus.Integer))
+		generator.AddInt(int(n.calculatedModulus.Uinteger))
 	}
 
 	if n.HasRange() {
-		generator.AddInt(int(n.calculatedRange.Min.Integer))
-		generator.AddInt(int(n.calculatedRange.Max.Integer))
+		generator.AddInt(1)
+		generator.AddInt(int(math.Floor(n.Range.Min.Float*float64(n.Divisor) + 0.5)))
+		generator.AddInt(int(math.Floor(n.Range.Max.Float*float64(n.Divisor) + 0.5)))
 	}
 }

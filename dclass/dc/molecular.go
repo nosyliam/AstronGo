@@ -9,7 +9,6 @@ type MolecularField struct {
 
 func NewMolecularField(name string) *MolecularField {
 	m := &MolecularField{}
-	m.keywords = make(map[string]struct{}, 0)
 	m.fieldType = BaseType(m)
 	m.BaseField.name = name
 	return m
@@ -40,11 +39,11 @@ func (m *MolecularField) AddField(field Field) (err error) {
 }
 
 func (m *MolecularField) GenerateHash(generator *HashGenerator) {
-	generator.AddInt(int(m.BaseField.id))
 	generator.AddString(m.BaseField.name)
+	generator.AddInt(int(m.BaseField.id))
 
 	generator.AddInt(len(m.fields))
 	for _, field := range m.fields {
-		generator.AddInt(int(field.Id()))
+		field.GenerateHash(generator)
 	}
 }

@@ -1,6 +1,8 @@
 package dc
 
-import "github.com/kavehmz/prime"
+import (
+	"github.com/kavehmz/prime"
+)
 
 const MAX_PRIMES = 10000
 
@@ -11,9 +13,9 @@ type HashGenerator struct {
 }
 
 func NewHashGenerator() *HashGenerator {
-	h := &HashGenerator{}
-	h.primes = prime.Primes(MAX_PRIMES * 10)
-	return h
+	g := &HashGenerator{}
+	g.primes = prime.Primes(MAX_PRIMES * 100)
+	return g
 }
 
 func (g *HashGenerator) AddInt(val int) {

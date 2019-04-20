@@ -11,7 +11,7 @@ type Class struct {
 
 	file *File
 
-	baseFields  map[string]Field
+	baseFields  []Field
 	constructor Field
 	parents     []Class
 }
@@ -21,10 +21,18 @@ func NewClass(name string, file *File) *Class {
 	c.dataType = T_STRUCT
 	c.name = name
 
-	c.baseFields = make(map[string]Field, 0)
 	c.fieldsByName = make(map[string]Field, 0)
 	c.fieldsById = make(map[uint]Field, 0)
 	return c
+}
+
+func (c *Class) HasField(name string) bool {
+	for _, field := range c.baseFields {
+		if field.Name() == name {
+			return true
+		}
+	}
+	return false
 }
 
 func (c *Class) AddParent(class Class) {
@@ -59,11 +67,11 @@ func (c *Class) AddField(field Field) (err error) {
 
 		c.fieldsById[field.Id()] = field
 		c.fieldsByName[fieldName] = field
-		c.baseFields[fieldName] = field
+		c.baseFields = append(c.baseFields, field)
 		return nil
 	}
 
-	if _, ok := c.baseFields[fieldName]; ok {
+	if c.HasField(fieldName) {
 		return errors.New(fmt.Sprintf("field with name `%s` already exists", fieldName))
 	}
 
@@ -72,7 +80,7 @@ func (c *Class) AddField(field Field) (err error) {
 
 	c.fieldsById[field.Id()] = field
 	c.fieldsByName[fieldName] = field
-	c.baseFields[fieldName] = field
+	c.baseFields = append(c.baseFields, field)
 
 	if c.HasFixedSize() || len(c.fields) == 1 {
 		if field.FieldType().HasFixedSize() {
@@ -87,7 +95,7 @@ func (c *Class) AddField(field Field) (err error) {
 
 func (c *Class) AddInheritedField(field Field) {
 	fieldName := field.Name()
-	if _, ok := c.baseFields[fieldName]; ok {
+	if c.HasField(fieldName) {
 		return
 	}
 
@@ -111,7 +119,6 @@ func (c *Class) AddInheritedField(field Field) {
 }
 
 func (c *Class) GenerateHash(generator *HashGenerator) {
-	c.DistributedType.GenerateHash(generator)
 	generator.AddString(c.name)
 
 	generator.AddInt(len(c.parents))
