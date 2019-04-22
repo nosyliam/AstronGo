@@ -13,7 +13,7 @@ func TestTraverse(t *testing.T) {
 		t.Fatalf("test dclass parse failed: %s", err)
 	}
 
-	dcf := dct.traverse()
+	dcf := dct.Traverse()
 	hashgen := dc.NewHashGenerator()
 	dcf.GenerateHash(hashgen)
 	hash := hashgen.Hash()

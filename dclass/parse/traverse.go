@@ -548,7 +548,7 @@ func (node TypeDecl) traverse(d *dc.File) {
 	}
 }
 
-func (d DCFile) traverse() *dc.File {
+func (d DCFile) Traverse() *dc.File {
 	file := dc.NewFile()
 
 	for _, declaration := range d.Declarations {

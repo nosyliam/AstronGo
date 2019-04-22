@@ -24,3 +24,18 @@ func ParseFile(file string) (ok *DCFile, err error) {
 
 	return dc, nil
 }
+
+func ParseString(conf string) (ok *DCFile, err error) {
+	parser, err := participle.Build(&DCFile{}, participle.UseLookahead(16))
+	if err != nil {
+		return nil, err
+	}
+
+	dc := &DCFile{}
+	err = parser.ParseString(conf, dc)
+	if err != nil {
+		return nil, err
+	}
+
+	return dc, nil
+}
