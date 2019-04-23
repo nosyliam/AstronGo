@@ -2,10 +2,12 @@ package main
 
 import (
 	"astrongo/core"
-	"github.com/davecgh/go-spew/spew"
+	"astrongo/dclass/dc"
+	"fmt"
 )
 
 func main() {
-	dcf := core.GetDC()
-	spew.Dump(dcf)
+	hasher := dc.NewHashGenerator()
+	core.DC.GenerateHash(hasher)
+	fmt.Printf("0x%x", hasher.Hash())
 }

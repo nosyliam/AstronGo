@@ -69,7 +69,7 @@ func (d *Datagram) AddMultipleServerHeader(recipients []Channel_t, from Channel_
 	d.AddUint16(messageType)
 }
 
-func (d* Datagram) AddControlHeader(messageType uint16) {
+func (d *Datagram) AddControlHeader(messageType uint16) {
 	d.AddUint8(1)
 	d.AddChannel(CONTROL_MESSAGE)
 	d.AddUint16(messageType)

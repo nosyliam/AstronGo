@@ -1,11 +1,10 @@
 daemon:
   name: Core Message Director
-  url: http://123.45.67.89/coremd/
 
 general:
   eventlogger: 127.0.0.1:9090
   dc_files:
-    - "aaaa"
+    - dclass/parse/test.dc
 
 uberdogs:
   - id: 1234

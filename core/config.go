@@ -4,33 +4,29 @@ import (
 	"fmt"
 	"github.com/spf13/viper"
 	"os"
-	"sync"
 )
 
-var (
-	c        *ServerConfig
-	confOnce sync.Once
-)
+var Config *ServerConfig
 
 type ServerConfig struct {
 	Daemon struct {
-		Name string `yaml:"name"`
-	} `yaml:"daemon"`
+		Name string
+	}
 	General struct {
-		EventloggerIP string   `yaml:"eventlogger"`
-		DCFiles       []string `yaml:"dc_files"`
-	} `yaml:"general"`
+		Eventlogger string
+		DC_Files    []string
+	}
 	Uberdogs []struct {
-		ID        int    `yaml:"id"`
-		Class     string `yaml:"class"`
-		Anonymous string `yaml:"anonymous"`
-	} `yaml:"uberdogs"`
+		ID        int
+		Class     string
+		Anonymous string
+	}
 	MessageDirector struct {
-		Bind string `yaml:"bind"`
-	} `yaml:"messagedirector"`
+		Bind string
+	}
 }
 
-func LoadConfig() *ServerConfig {
+func loadConfig() *ServerConfig {
 	viper.SetConfigType("yaml")
 	viper.AddConfigPath(".")
 	viper.AddConfigPath("./config")
@@ -51,14 +47,9 @@ func LoadConfig() *ServerConfig {
 	return conf
 }
 
-func GetConfig() *ServerConfig {
-	confOnce.Do(func() {
-		c = LoadConfig()
-	})
-
-	if c == nil {
+func init() {
+	Config = loadConfig()
+	if Config == nil {
 		os.Exit(1)
 	}
-
-	return c
 }

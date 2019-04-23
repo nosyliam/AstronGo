@@ -7,19 +7,14 @@ import (
 	"io/ioutil"
 	"os"
 	"strings"
-	"sync"
 )
 
-var (
-	dcf    *dc.File
-	dcOnce sync.Once
-)
+var DC *dc.File
 
-func LoadDC() *dc.File {
+func loadDC() *dc.File {
 	var configs []string
-	config := GetConfig()
 
-	for _, conf := range config.General.DCFiles {
+	for _, conf := range Config.General.DC_Files {
 		fmt.Println(conf)
 		data, err := ioutil.ReadFile(conf)
 		if err != nil {
@@ -42,18 +37,12 @@ func LoadDC() *dc.File {
 			os.Exit(1)
 		}
 	}()
-	dcf = dctree.Traverse()
-	return dcf
+	return dctree.Traverse()
 }
 
-func GetDC() *dc.File {
-	dcOnce.Do(func() {
-		dcf = LoadDC()
-	})
-
-	if dcf == nil {
+func init() {
+	DC = loadDC()
+	if DC == nil {
 		os.Exit(1)
 	}
-
-	return dcf
 }
