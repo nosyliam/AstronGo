@@ -15,7 +15,6 @@ func loadDC() *dc.File {
 	var configs []string
 
 	for _, conf := range Config.General.DC_Files {
-		fmt.Println(conf)
 		data, err := ioutil.ReadFile(conf)
 		if err != nil {
 			fmt.Printf("failed to read dc file %s: %v", conf, err)

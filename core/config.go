@@ -3,7 +3,6 @@ package core
 import (
 	"fmt"
 	"github.com/spf13/viper"
-	"os"
 )
 
 var Config *ServerConfig
@@ -26,10 +25,11 @@ type ServerConfig struct {
 	}
 }
 
-func loadConfig() *ServerConfig {
+func LoadConfig(path string) *ServerConfig {
 	viper.SetConfigType("yaml")
 	viper.AddConfigPath(".")
 	viper.AddConfigPath("./config")
+	viper.AddConfigPath(path)
 	viper.SetConfigName("config")
 	err := viper.ReadInConfig()
 
@@ -45,11 +45,4 @@ func loadConfig() *ServerConfig {
 	}
 
 	return conf
-}
-
-func init() {
-	Config = loadConfig()
-	if Config == nil {
-		os.Exit(1)
-	}
 }
