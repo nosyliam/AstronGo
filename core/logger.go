@@ -14,7 +14,7 @@ import (
 )
 
 // Default handler outputting to stderr.
-var Log = New(os.Stderr)
+var Log = NewLogger(os.Stderr)
 
 var bold = color.New(color.Bold)
 var grey = color.New(color.FgHiBlack)
@@ -44,7 +44,7 @@ type Handler struct {
 }
 
 // New handler.
-func New(w io.Writer) *Handler {
+func NewLogger(w io.Writer) *Handler {
 	if f, ok := w.(*os.File); ok {
 		return &Handler{
 			Writer: colorable.NewColorable(f),

@@ -1,6 +1,7 @@
 package core
 
 import (
+	"errors"
 	"fmt"
 	"github.com/spf13/viper"
 )
@@ -25,24 +26,22 @@ type ServerConfig struct {
 	}
 }
 
-func LoadConfig(path string) *ServerConfig {
+func LoadConfig(path string, name string) (err error) {
 	viper.SetConfigType("yaml")
 	viper.AddConfigPath(".")
 	viper.AddConfigPath("./config")
 	viper.AddConfigPath(path)
-	viper.SetConfigName("config")
-	err := viper.ReadInConfig()
+	viper.SetConfigName(name)
 
-	if err != nil {
-		fmt.Printf("%v", err)
-		return nil
+	if err := viper.ReadInConfig(); err != nil {
+		return errors.New(fmt.Sprintf("Unable to load configuration file: %v", err))
 	}
 
 	conf := &ServerConfig{}
-	err = viper.Unmarshal(conf)
-	if err != nil {
-		fmt.Printf("unable to decode into config struct, %v", err)
+	if err := viper.Unmarshal(conf); err != nil {
+		return errors.New(fmt.Sprintf("Unable to decode configuration file: %v", err))
 	}
 
-	return conf
+	Config = conf
+	return nil
 }
