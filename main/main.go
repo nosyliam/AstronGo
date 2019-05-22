@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/apex/log"
 	"github.com/spf13/pflag"
-	"io"
 	"os"
 	"path"
 	"path/filepath"
@@ -45,7 +44,7 @@ func main() {
 	logfilePtr := pflag.StringP("log", "L", "", "Specify the file to write log messages to.")
 	loglevelPtr := pflag.StringP("loglevel", "l", "info", "Specify minimum log level that should be logged.")
 	versionPtr := pflag.BoolP("version", "v", false, "Show the application version.")
-	helpPtr := pflag.BoolP("help", "h", false, "Show the application version.")
+	helpPtr := pflag.BoolP("help", "h", false, "Show the application usage.")
 
 	pflag.Parse()
 
@@ -72,15 +71,19 @@ Revision: INDEV`)
 		}
 	}
 	if *logfilePtr != "" {
-		logfile, err := os.OpenFile(*logfilePtr, os.O_APPEND|os.O_WRONLY, 0600)
-		if err == nil {
+		logfile, err := os.OpenFile(*logfilePtr, os.O_RDWR|os.O_CREATE, 0600)
+		if err != nil {
 			mainLog.Fatal(fmt.Sprintf("Failed to open log file \"%s\".", *logfilePtr))
 			os.Exit(1)
 		}
+		logfile.Truncate(0)
+		logfile.Seek(0, 0)
+
+		defer logfile.Sync()
 		defer logfile.Close()
 
-		core.Log = core.NewLogger(io.MultiWriter(os.Stdout, logfile))
-		log.SetHandler(core.Log)
+		handler := core.NewMultiHandler(core.Log, core.NewLogger(logfile))
+		log.SetHandler(handler)
 	}
 
 	var configPath, configName string
