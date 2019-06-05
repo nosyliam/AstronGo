@@ -11,22 +11,22 @@ type Range struct {
 }
 
 // Each MD participant is represented as a subscriber within the MD; when a participant desires to listen to
-//  a DO (a "channel") the channel map will store the ID in the participant's unique object. This subscription
-//  is also recorded in the MD's subscription map, inserting the subscriber into the channel's subscribed channels list.
+//  a DO (a "channel") the channel map will store it's ID in the participant's unique object.
 type Subscriber struct {
 	participant MDParticipant
 
 	channels []util.Channel_t
 	ranges   []Range
+
+	active bool
 }
 
 type ChannelMap struct {
-	// Subscriptions map channels to a list of their subscribers
-	subscriptions map[util.Channel_t][]Subscriber
+	// Subscriptions map channels to a chan which accepts datagram or Subscriber objects
+	subscriptions sync.Map
 
-	// Ranges maps a range to a list of it's subscribers
-	ranges map[Range][]Subscriber
-	lock   sync.Mutex
+	// Ranges maps a range to a chan which accepts datagram or Subscriber objects
+	ranges sync.Map
 }
 
 func (s *Subscriber) Subscribed(ch util.Channel_t) bool {
@@ -45,64 +45,59 @@ func (s *Subscriber) Subscribed(ch util.Channel_t) bool {
 	return false
 }
 
-// Lookup asynchronously searches for the set of channels within the channel and
-//  range maps and returns the subscription lists of the results
-func (c *ChannelMap) Lookup(channels []util.Channel_t) []MDParticipant {
-	var participants []MDParticipant
+func (c *ChannelMap) SubscribeRange(p *Subscriber, rng Range) {
 
-	c.lock.Lock()
-	defer c.lock.Unlock()
-
-	ps := make(chan MDParticipant)
-	finish := make(chan int)
-
-	go func() {
-		for _, ch := range channels {
-			// Search if the channel possesses a subscription list; if it does, append all of it
-			if subs, ok := c.subscriptions[ch]; ok {
-				for _, sub := range subs {
-					ps <- sub.participant
-				}
-			}
-		}
-		finish <- 1
-	}()
-
-	go func() {
-		for _, ch := range channels {
-			// Search each range to see if it contains the channel; if it does, append it's subscription list
-			for rng, subs := range c.ranges {
-				if rng.min < ch && rng.max > ch {
-					for _, sub := range subs {
-						ps <- sub.participant
-					}
-				}
-			}
-
-		}
-		finish <- 1
-	}()
-
-	<-finish
-	<-finish
-	close(ps)
-
-	for sub := range ps {
-		participants = append(participants, sub)
-	}
-	return participants
 }
 
 func (c *ChannelMap) SubscribeChannel(p *Subscriber, ch util.Channel_t) {
-	c.lock.Lock()
-	defer c.lock.Unlock()
-
 	if p.Subscribed(ch) {
 		return
 	}
 
 	p.channels = append(p.channels, ch)
-	if subs, ok := c.subscriptions[ch]; ok {
-		// TODO: a
+	if _, ok := c.subscriptions.Load(ch); !ok {
+		rdchan := make(chan interface{})
+		go channelRoutine(rdchan, ch)
+		rdchan <- *p
+		c.subscriptions.Store(ch, rdchan)
 	}
+
+}
+
+// channelRoutine implements a goroutine which continually reads a given chan for datagram and subscriber objects.
+//  When given a datagram, it assumes the channel associated with the routine is a receiver and will route the
+//  the datagram to all of it's subscribers. When given a subscriber, it will append the object to it's subscribers
+//  list; however, if the subscriber is inactive (denoted by subscriber.active) it assumes that a removal operation
+//  operation is taking place and will attempt to a remove the subscriber from it's subscribers list.
+func channelRoutine(buf <-chan interface{}, channel util.Channel_t) {
+	var subscribers []Subscriber
+	for {
+		select {
+		case v, ok := <-buf:
+			if !ok {
+				break
+			}
+
+			switch data := v.(type) {
+			case Subscriber:
+				if data.active {
+					subscribers = append(subscribers, data)
+				} else {
+					idx := 0
+					for _, sub := range subscribers {
+						if sub.participant != data.participant {
+							subscribers[idx] = sub
+							idx++
+						}
+					}
+					subscribers = subscribers[:idx]
+				}
+			case util.Datagram:
+				for _, sub := range subscribers {
+					sub.participant.HandleDatagram(data)
+				}
+			}
+		}
+	}
+
 }

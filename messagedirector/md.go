@@ -14,12 +14,11 @@ type MessageDirector struct {
 
 	// MD participants may directly queue datagarams to be routed by inserting it into the
 	// queue channel, where they will be processed asynchronously
-	Queue chan<- util.Datagram
+	Queue chan util.Datagram
 }
 
 func start() {
 	MD = &MessageDirector{}
-	MD.Queue = make(chan<- util.Datagram)
-	MD.subscriptions = make(map[util.Channel_t][]Subscriber)
+	MD.Queue = make(chan util.Datagram)
 	MD.participants = make([]MDParticipant, 0)
 }
