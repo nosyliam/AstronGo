@@ -6,8 +6,7 @@ import (
 )
 
 type MDParticipant interface {
-	// HandleDatagram processes a received datagram
-	HandleDatagram(util.Datagram)
+	net.DatagramHandler
 
 	// RouteDatagram routes a datagram to the MD
 	RouteDatagram(util.Datagram)

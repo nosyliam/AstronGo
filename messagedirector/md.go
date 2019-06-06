@@ -1,10 +1,21 @@
 package messagedirector
 
-import "astrongo/util"
+import (
+	"astrongo/core"
+	"astrongo/net"
+	"astrongo/util"
+	"fmt"
+	"github.com/apex/log"
+	gonet "net"
+)
+
+var MDLog *log.Entry
 
 var MD *MessageDirector
 
 type MessageDirector struct {
+	net.Server
+	net.NetworkServer
 	ChannelMap
 
 	// Connections within the context of the MessageDirector are represented as
@@ -17,8 +28,36 @@ type MessageDirector struct {
 	Queue chan util.Datagram
 }
 
-func start() {
+func init() {
+	MDLog = log.WithFields(log.Fields{
+		"name": "MD",
+	})
+}
+
+func Start() {
 	MD = &MessageDirector{}
 	MD.Queue = make(chan util.Datagram)
 	MD.participants = make([]MDParticipant, 0)
+	MD.Handler = MD.Server
+
+	bindAddr := core.Config.MessageDirector.Bind
+	if bindAddr == "" {
+		bindAddr = "127.0.0.1:7199"
+	}
+
+	errChan := make(chan error)
+	go func() {
+		err := <-errChan
+		switch err {
+		case nil:
+			MDLog.Info(fmt.Sprintf("Opened listening socket at %s", bindAddr))
+		default:
+			MDLog.Fatal(err.Error())
+		}
+	}()
+	MD.Start(bindAddr, errChan)
+}
+
+func (m *MessageDirector) handleConnect(gonet.Conn) {
+
 }

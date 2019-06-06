@@ -4,37 +4,33 @@ package net
 
 import (
 	"context"
-	"github.com/apex/log"
 	"net"
-	"strconv"
-	"sync"
 	"sync/atomic"
+	"time"
 )
 
-// A server is a representation of a listening socket. Structures embedding Server must
-// implement the appropriate callbacks.
+// Server is an interface which allows a network listening mechanism to pass accepted connections to
+//  an actual server, like a CA or MD
 type Server interface {
+	handleConnect(net.Conn)
 }
 
-// NetworkServer is a base class which provides methods that accept and manage connections.
+// NetworkServer is a base class which provides methods that accept connections.
 type NetworkServer struct {
-	Server
+	Handler Server
 
-	inConns   sync.Map
-	outConns  sync.Map
+	keepAlive time.Duration
 	ln        net.Listener
 	listening uint32
 }
 
-func (s *NetworkServer) start(bindAddr string, port int) {
-	address := bindAddr + ":" + strconv.Itoa(port)
-
-	if err := s.listenConn(address); err != nil {
-		log.Fatalf("%v", err)
+func (s *NetworkServer) Start(bindAddr string, errChan chan error) {
+	if err := s.listenConn(bindAddr, errChan); err != nil {
+		errChan <- err
 	}
 }
 
-func (s *NetworkServer) shutdown(ctx context.Context) error {
+func (s *NetworkServer) Shutdown(ctx context.Context) error {
 	if atomic.CompareAndSwapUint32(&s.listening, 1, 0) {
 		if err := s.ln.Close(); err != nil {
 			return err
@@ -43,18 +39,19 @@ func (s *NetworkServer) shutdown(ctx context.Context) error {
 	return nil
 }
 
-func (s *NetworkServer) listenConn(address string) error {
+func (s *NetworkServer) listenConn(address string, errChan chan error) error {
 	ln, err := net.Listen("tcp", address)
 	if err != nil {
 		return err
 	}
 	s.ln = ln
 
+	errChan <- nil
 	atomic.StoreUint32(&s.listening, 1)
 	for atomic.LoadUint32(&s.listening) == 1 {
-		_, err := ln.Accept()
+		conn, err := ln.Accept()
 		if err == nil {
-			// TODO
+			s.Handler.handleConnect(conn)
 			continue
 		}
 	}
