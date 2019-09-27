@@ -93,6 +93,8 @@ func (c *Client) read() {
 
 func (c *Client) sendDatagram(datagram util.Datagram) {
 	var dg util.Datagram
+	dg = util.NewDatagram()
+
 	c.Mutex.Lock()
 	defer c.Mutex.Unlock()
 

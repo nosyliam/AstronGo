@@ -13,12 +13,11 @@ import (
 const socketBuffSize = 4096
 
 type socketTransport struct {
-	conn       net.Conn
-	rw         io.ReadWriter
-	br         *bufio.Reader
-	bw         *bufio.Writer
-	keepAlive  time.Duration
-	compressed bool
+	conn      net.Conn
+	rw        io.ReadWriter
+	br        *bufio.Reader
+	bw        *bufio.Writer
+	keepAlive time.Duration
 }
 
 // NewSocketTransport creates a socket class stream transport.
@@ -54,6 +53,10 @@ func (s *socketTransport) Close() error {
 }
 
 // Flush writes any buffered data to the underlying io.Writer.
-func (s *socketTransport) Flush() error {
-	return s.bw.Flush()
+func (s *socketTransport) Flush() chan error {
+	errChan := make(chan error)
+	go func() {
+		errChan <- s.bw.Flush()
+	}()
+	return errChan
 }

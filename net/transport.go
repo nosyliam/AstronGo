@@ -15,5 +15,5 @@ type Transport interface {
 	WriteDatagram(datagram util.Datagram) (n int, err error)
 
 	// Flush writes any buffered data to the underlying io.Writer.
-	Flush() error
+	Flush() chan error
 }
