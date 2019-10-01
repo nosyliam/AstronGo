@@ -26,29 +26,72 @@ func (m *MDParticipantFake) Terminate() {}
 var participant *MDParticipantFake
 var netclient *Client
 
+var sserver net.Conn
+var sclient net.Conn
+var ssocket *socketTransport
+
 func TestClient_SendDatagram(t *testing.T) {
 	dg := util.NewDatagram()
 	dg.WriteString("hello")
 
 	go netclient.sendDatagram(dg)
-	reader := bufio.NewReaderSize(server, socketBuffSize)
-	buff := make([]byte, 1024)
-	data, err := reader.Read(buff)
+	reader := bufio.NewReaderSize(sserver, socketBuffSize)
+	buff := make([]byte, 9)
+	_, err := reader.Read(buff)
 	if err != nil {
 		t.Error(err)
 	}
 
-	require.EqualValues(t, data, []byte{5, 0, 0, 0, 'h', 'e', 'l', 'l', 'o'})
+	require.ElementsMatch(t, buff, []byte{5, 0, 0, 0, 'h', 'e', 'l', 'l', 'o'})
+}
+
+func TestClient_Read(t *testing.T) {
+	dg := util.NewDatagram()
+	dg.AddInt32(5)
+	dg.WriteString("hello")
+
+	writer := bufio.NewWriterSize(sserver, socketBuffSize)
+	writer.Write(dg.Bytes())
+	go writer.Flush()
+	go netclient.read()
+	select {
+	case dg := <-queue:
+		require.EqualValues(t, dg.Len(), 5)
+	case <-time.After(1 * time.Second):
+		t.Error("read timeout")
+	}
+}
+
+func TestClient_Defragment(t *testing.T) {
+	dg1 := util.NewDatagram()
+	dg1.AddInt32(10)
+	dg1.WriteString("hello ")
+	dg2 := util.NewDatagram()
+	dg2.WriteString("world")
+
+	writer := bufio.NewWriterSize(sserver, socketBuffSize)
+	writer.Write(dg1.Bytes())
+	go netclient.read()
+	go writer.Flush()
+	writer.Write(dg2.Bytes())
+	go writer.Flush()
+	select {
+	case dg := <-queue:
+		require.EqualValues(t, dg.Len(), 10)
+	case <-time.After(1 * time.Second):
+		t.Error("read timeout")
+	}
 }
 
 func init() {
-	server, client = net.Pipe()
-	socket = &socketTransport{
-		conn:      client,
-		rw:        client,
-		br:        bufio.NewReaderSize(client, socketBuffSize),
-		bw:        bufio.NewWriterSize(client, socketBuffSize),
-		keepAlive: 50 * time.Millisecond,
+	sserver, sclient = net.Pipe()
+	ssocket = &socketTransport{
+		conn:      sclient,
+		rw:        sclient,
+		br:        bufio.NewReaderSize(sclient, socketBuffSize),
+		bw:        bufio.NewWriterSize(sclient, socketBuffSize),
+		keepAlive: 60 * time.Second,
 	}
-	netclient = NewClient(Transport(socket), participant)
+	participant = &MDParticipantFake{}
+	netclient = NewClient(Transport(ssocket), participant)
 }
