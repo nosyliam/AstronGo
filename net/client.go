@@ -73,6 +73,7 @@ func (c *Client) processInput(len int, data []byte) {
 			dg.Write(data[util.Dgsize:])
 			c.handler.HandleDatagram(dg)
 			c.Mutex.Unlock()
+			return
 		}
 	}
 

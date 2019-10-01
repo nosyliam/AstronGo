@@ -52,7 +52,3 @@ func TestChannelMap_SubscribeChannel(t *testing.T) {
 	}
 
 }
-
-func init() {
-	start()
-}

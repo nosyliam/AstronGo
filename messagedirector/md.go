@@ -56,8 +56,15 @@ func Start() {
 		}
 	}()
 	MD.Start(bindAddr, errChan)
+	go MD.queueLoop()
 }
 
-func (m *MessageDirector) handleConnect(gonet.Conn) {
+func (m *MessageDirector) queueLoop() {
+	for dg := range MD.Queue {
+		fmt.Println(dg)
+	}
+}
 
+func (m *MessageDirector) handleConnect(conn gonet.Conn) {
+	NewMDParticipant(conn)
 }

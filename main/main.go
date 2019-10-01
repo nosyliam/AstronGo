@@ -8,6 +8,7 @@ import (
 	"github.com/apex/log"
 	"github.com/spf13/pflag"
 	"os"
+	"os/signal"
 	"path"
 	"path/filepath"
 	"strings"
@@ -110,4 +111,12 @@ Revision: INDEV`)
 	core.DC.GenerateHash(hasher)
 	mainLog.Info(fmt.Sprintf("DC hash: 0x%x", hasher.Hash()))
 	messagedirector.Start()
+
+	c := make(chan os.Signal)
+	signal.Notify(c, os.Interrupt)
+	select {
+	case sig := <-c:
+		mainLog.Fatal(fmt.Sprintf("Got %s signal. Aborting...", sig))
+		os.Exit(1)
+	}
 }

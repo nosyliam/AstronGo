@@ -23,14 +23,15 @@ func (d *Datagram) AddInt16(v int16)        { binary.Write(d, binary.LittleEndia
 func (d *Datagram) AddUint16(v uint16)      { binary.Write(d, binary.LittleEndian, v) }
 func (d *Datagram) AddInt32(v int32)        { binary.Write(d, binary.LittleEndian, v) }
 func (d *Datagram) AddUint32(v uint32)      { binary.Write(d, binary.LittleEndian, v) }
-func (d *Datagram) AddInt64(v int32)        { binary.Write(d, binary.LittleEndian, v) }
-func (d *Datagram) AddUint64(v uint32)      { binary.Write(d, binary.LittleEndian, v) }
+func (d *Datagram) AddInt64(v int64)        { binary.Write(d, binary.LittleEndian, v) }
+func (d *Datagram) AddUint64(v uint64)      { binary.Write(d, binary.LittleEndian, v) }
 func (d *Datagram) AddFloat32(v float32)    { binary.Write(d, binary.LittleEndian, v) }
-func (d *Datagram) AddFloat64(v float32)    { binary.Write(d, binary.LittleEndian, v) }
+func (d *Datagram) AddFloat64(v float64)    { binary.Write(d, binary.LittleEndian, v) }
 func (d *Datagram) AddSize(v Dgsize_t)      { binary.Write(d, binary.LittleEndian, v) }
 func (d *Datagram) AddChannel(v Channel_t)  { binary.Write(d, binary.LittleEndian, v) }
 func (d *Datagram) AddDoid(v Doid_t)        { binary.Write(d, binary.LittleEndian, v) }
 func (d *Datagram) AddZone(v Zone_t)        { binary.Write(d, binary.LittleEndian, v) }
+func (d *Datagram) AddBool(v bool)          { binary.Write(d, binary.LittleEndian, v) }
 func (d *Datagram) AddData(v []byte)        { d.Write(v) }
 func (d *Datagram) AddDatagram(v *Datagram) { d.Write(v.Bytes()) }
 func (d *Datagram) AddString(v string) {
