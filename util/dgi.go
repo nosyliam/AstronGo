@@ -1,11 +1,20 @@
 package util
 
 import (
+	"astrongo/dclass/dc"
 	"bytes"
 	"encoding/binary"
 	"fmt"
 	"io"
 )
+
+type DatagramIteratorEOF struct {
+	err string
+}
+
+type FieldConstraintViolation struct {
+	err string
+}
 
 type DatagramIterator struct {
 	dg     *Datagram
@@ -19,7 +28,9 @@ func NewDatagramIterator(dg *Datagram) *DatagramIterator {
 }
 
 func (dgi *DatagramIterator) panic(len int8) {
-	panic(fmt.Sprintf("datagram iterator eof, read length: %d buff length: %d", len, dgi.read.Len()))
+	panic(DatagramIteratorEOF{
+		fmt.Sprintf("datagram iterator eof, read length: %d buff length: %d", len, dgi.read.Len()),
+	})
 }
 
 func (dgi *DatagramIterator) readBool() bool {
@@ -198,17 +209,78 @@ func (dgi *DatagramIterator) readString() string {
 }
 
 func (dgi *DatagramIterator) readBlob() []uint8 {
-	return nil
+	return dgi.readData(dgi.readSize())
 }
 
 func (dgi *DatagramIterator) readDatagram() *Datagram {
-	return nil
+	data := dgi.readBlob()
+	dg := NewDatagram()
+	dg.Write(data)
+	return &dg
 }
 
 func (dgi *DatagramIterator) readData(length Dgsize_t) []uint8 {
-	return nil
+	buff := make([]uint8, int32(length))
+	if _, err := dgi.read.Read(buff); err != nil {
+		dgi.panic(int8(length))
+	}
+
+	dgi.offset += length
+	dgi.read.Seek(int64(dgi.offset), io.SeekStart)
+	return buff
 }
 
 func (dgi *DatagramIterator) readRemainder() []uint8 {
-	return nil
+	sz := Dgsize_t(dgi.dg.Len()) - dgi.offset
+	return dgi.readData(sz)
+}
+
+// Shorthand for unpackDtype
+func (dgi *DatagramIterator) unpackField(field dc.Field, buffer bytes.Buffer) {
+	dgi.unpackDtype(field.FieldType(), buffer)
+}
+
+func (dgi *DatagramIterator) unpackDtype(dtype dc.BaseType, buffer bytes.Buffer) {
+	fixed := (dtype.Type() == dc.T_METHOD || dtype.Type() == dc.T_STRUCT) || dtype.HasRange()
+
+	if dtype.HasFixedSize() && !fixed {
+		if array := dtype.(*dc.ArrayType); array != nil && array.ElementType().HasRange() && dtype.Type() == dc.T_ARRAY {
+			for n := 0; n < int(array.Size()); n++ {
+				dgi.unpackDtype(array.ElementType(), buffer)
+			}
+		}
+
+		num := dtype.(*dc.NumericType)
+		data := dgi.readData(Dgsize_t(dtype.Size()))
+
+		if num != nil && num.HasRange() {
+			if !num.WithinRange(data, 0) {
+				panic(FieldConstraintViolation{
+					fmt.Sprintf("field constraint violation: failed to unpack numeric type %s", dtype.Alias()),
+				})
+			}
+		}
+
+		buffer.Write(data)
+	}
+
+	switch dtype.Type() {
+	case dc.T_VARSTRING, dc.T_VARBLOB, dc.T_VARARRAY:
+		array := dtype.(*dc.ArrayType)
+		len := dgi.readSize()
+
+		// for some reason, we have to do this
+		netbuff := make([]byte, 4)
+		binary.BigEndian.PutUint32(netbuff, uint32(len))
+		lenbuff := make([]uint8, netbuff[0])
+		for n := range lenbuff {
+			lenbuff[n] = netbuff[0] + Dgsize
+		}
+		buffer.Write(lenbuff)
+
+	case dc.T_STRUCT:
+
+	case dc.T_METHOD:
+
+	}
 }

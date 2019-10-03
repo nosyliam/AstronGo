@@ -43,3 +43,24 @@ func TestDatagramIterator_ReadString(t *testing.T) {
 	dgi = NewDatagramIterator(&dg)
 	require.EqualValues(t, dgi.readString(), "hello")
 }
+
+func TestDatagramIterator_ReadData(t *testing.T) {
+	var dg Datagram
+	var dgi *DatagramIterator
+
+	dg = NewDatagram()
+	dg.AddDataBlob([]byte{'a', 'b', 'c', 'd'})
+	dgi = NewDatagramIterator(&dg)
+	require.ElementsMatch(t, dgi.readBlob(), []uint8{'a', 'b', 'c', 'd'})
+
+	dg = NewDatagram()
+	dg.AddString("test123")
+	dgi = NewDatagramIterator(&dg)
+	require.ElementsMatch(t, dgi.readData(8), []uint8{7, 0, 0, 0, 't', 'e', 's', 't'})
+
+	dg = NewDatagram()
+	dg.AddString("test123")
+	dgi = NewDatagramIterator(&dg)
+	dgi.readData(8)
+	require.ElementsMatch(t, dgi.readRemainder(), []byte{'1', '2', '3'})
+}

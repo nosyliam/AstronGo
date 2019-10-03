@@ -192,7 +192,7 @@ func (n *NumericType) SetRange(rng NumericRange) {
 	}
 }
 
-func (n NumericType) WithinRange(data []byte, length uint64) bool {
+func (n NumericType) WithinRange(data []byte, uint64 length) bool {
 	encoded, err := n.dataToNumber(data)
 	if err != nil {
 		return false
