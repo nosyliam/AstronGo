@@ -266,21 +266,120 @@ func (dgi *DatagramIterator) unpackDtype(dtype dc.BaseType, buffer bytes.Buffer)
 
 	switch dtype.Type() {
 	case dc.T_VARSTRING, dc.T_VARBLOB, dc.T_VARARRAY:
+		var elemCount uint64
 		array := dtype.(*dc.ArrayType)
 		len := dgi.readSize()
 
-		// for some reason, we have to do this
-		netbuff := make([]byte, 4)
-		binary.BigEndian.PutUint32(netbuff, uint32(len))
-		lenbuff := make([]uint8, netbuff[0])
-		for n := range lenbuff {
-			lenbuff[n] = netbuff[0] + Dgsize
+		netlen := make([]byte, 4)
+		binary.BigEndian.PutUint32(netlen, uint32(len))
+		buffer.Write(netlen)
+
+		if dtype.Type() == dc.T_VARARRAY {
+			sz := buffer.Len()
+
+			for elemCount = 0; buffer.Len()-sz < int(len); elemCount++ {
+				dgi.unpackDtype(array.ElementType(), buffer)
+			}
+		} else {
+			data := dgi.readData(len)
+			buffer.Write(data)
+			elemCount = uint64(len)
 		}
-		buffer.Write(lenbuff)
 
+		if !array.WithinRange(nil, elemCount) {
+			panic(FieldConstraintViolation{
+				fmt.Sprintf("field constraint violation: failed to unpack array type %s", dtype.Alias()),
+			})
+		}
 	case dc.T_STRUCT:
-
+		strct := dtype.(*dc.Struct)
+		fields := strct.GetNumFields()
+		for n := 0; n < fields; n++ {
+			dgi.unpackDtype(strct.GetField(n).FieldType(), buffer)
+		}
 	case dc.T_METHOD:
-
+		method := dtype.(*dc.Method)
+		params := method.GetNumParameters()
+		for n := 0; n < params; n++ {
+			dgi.unpackDtype(method.GetParameter(n).Type(), buffer)
+		}
 	}
+}
+
+func (dgi *DatagramIterator) skipField(field dc.Field) {
+	dgi.skipDtype(field.FieldType())
+}
+
+func (dgi *DatagramIterator) skipDtype(dtype dc.BaseType) {
+	if dtype.HasFixedSize() {
+		len := dtype.Size()
+		dgi.skip(Dgsize_t(len))
+	}
+
+	switch dtype.Type() {
+	case dc.T_VARSTRING, dc.T_VARBLOB, dc.T_VARARRAY:
+		len := dgi.readSize()
+		dgi.skip(len)
+	case dc.T_STRUCT:
+		strct := dtype.(*dc.Struct)
+		fields := strct.GetNumFields()
+		for n := 0; n < fields; n++ {
+			dgi.skipDtype(strct.GetField(n).FieldType())
+		}
+	case dc.T_METHOD:
+		method := dtype.(*dc.Method)
+		params := method.GetNumParameters()
+		for n := 0; n < params; n++ {
+			dgi.skipDtype(method.GetParameter(n).Type())
+		}
+	}
+}
+
+func (dgi *DatagramIterator) receipientCount() uint8 {
+	if dgi.read.Len() == 0 {
+		return 0
+	}
+
+	return dgi.dg.Bytes()[0]
+}
+
+func (dgi *DatagramIterator) sender() Channel_t {
+	offset := dgi.offset
+
+	dgi.offset = 1 + Dgsize_t(dgi.receipientCount())*Chansize
+	sender := dgi.readChannel()
+
+	dgi.offset = offset
+	return sender
+}
+
+func (dgi *DatagramIterator) messageType() uint16 {
+	offset := dgi.offset
+
+	dgi.offset = 1 + Dgsize_t(dgi.receipientCount())*(Chansize+1)
+	msg := dgi.readUint16()
+
+	dgi.offset = offset
+	return msg
+}
+
+func (dgi *DatagramIterator) tell() Dgsize_t {
+	return dgi.offset
+}
+
+func (dgi *DatagramIterator) seek(pos Dgsize_t) {
+	dgi.offset = pos
+}
+
+func (dgi *DatagramIterator) seekPayload() {
+	dgi.seek(0)
+	dgi.offset = 1 + Dgsize_t(dgi.receipientCount())*Chansize
+}
+
+func (dgi *DatagramIterator) skip(len Dgsize_t) {
+	if dgi.offset+len > Dgsize_t(dgi.dg.Len()) {
+		dgi.panic(int8(len))
+	}
+
+	dgi.offset += len
 }
