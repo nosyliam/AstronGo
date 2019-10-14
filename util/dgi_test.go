@@ -1,6 +1,8 @@
 package util
 
 import (
+	"astrongo/dclass/parse"
+	"bytes"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
@@ -63,4 +65,99 @@ func TestDatagramIterator_ReadData(t *testing.T) {
 	dgi = NewDatagramIterator(&dg)
 	dgi.readData(8)
 	require.ElementsMatch(t, dgi.readRemainder(), []byte{'1', '2', '3'})
+}
+
+func TestDatagramIterator_Unpack(t *testing.T) {
+	var dg Datagram
+	var dgi *DatagramIterator
+	var buff *bytes.Buffer
+	buff = &bytes.Buffer{}
+
+	dct, err := parse.ParseFile("util/test.dc")
+	if err != nil {
+		t.Fatalf("test dclass parse failed: %s", err)
+	}
+
+	dcf := dct.Traverse()
+	cls, _ := dcf.ClassByName("methods")
+	dg = NewDatagram()
+	dg.AddUint32(123456789)
+	dg.AddInt16(-1234)
+	dg.AddUint8(32)
+	dg.AddFloat64(3.14239285)
+	dg.AddInt8(-100)
+	dg.AddInt16(-10000)
+	dgi = NewDatagramIterator(&dg)
+	dgi.unpackDtype(cls, buff)
+	dg = NewDatagram()
+	dg.Write(buff.Bytes())
+	dgi = NewDatagramIterator(&dg)
+	require.EqualValues(t, dgi.readUint32(), 123456789)
+
+	errChan := make(chan string)
+	go func() {
+		buff.Truncate(0)
+		cls, _ = dcf.ClassByName("constraints1")
+		dg = NewDatagram()
+		dg.AddUint8(123)
+		dgi = NewDatagramIterator(&dg)
+		defer func() {
+			if r := recover(); r == nil {
+				errChan <- "numeric constraint violation test failed"
+			}
+			errChan <- ""
+		}()
+		dgi.unpackDtype(cls, buff)
+	}()
+	if err := <-errChan; err != "" {
+		t.Errorf(err)
+	}
+
+	go func() {
+		buff.Truncate(0)
+		cls, _ = dcf.ClassByName("constraints2")
+		dg = NewDatagram()
+		dg.AddString("6Chars")
+		dgi = NewDatagramIterator(&dg)
+		defer func() {
+			if r := recover(); r == nil {
+				errChan <- "array constraint violation test failed"
+			}
+			errChan <- ""
+		}()
+		dgi.unpackDtype(cls, buff)
+	}()
+	if err := <-errChan; err != "" {
+		t.Errorf(err)
+	}
+
+	go func() {
+		buff.Truncate(0)
+		cls, _ = dcf.ClassByName("arrays")
+		dg = NewDatagram()
+		dg.AddSize(3)
+		dg.AddInt8(3)
+		dg.AddInt8(4)
+		dg.AddInt8(5)
+		dg.AddSize(12)
+		for n := 0; n < 12; n++ {
+			dg.AddInt8(3)
+		}
+		dg.AddSize(4)
+		for n := 0; n < 4; n++ {
+			dg.AddInt8(99)
+		}
+
+		dgi = NewDatagramIterator(&dg)
+		//defer func() {
+		//	if r := recover(); r == nil {
+		//		errChan <- "array constraint violation test failed"
+		//	} else { fmt.Println(r) }
+		//	errChan <- ""
+		//}()
+		dgi.unpackDtype(cls, buff)
+	}()
+	if err := <-errChan; err != "" {
+		t.Errorf(err)
+	}
 }

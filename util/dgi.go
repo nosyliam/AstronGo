@@ -28,6 +28,7 @@ func NewDatagramIterator(dg *Datagram) *DatagramIterator {
 }
 
 func (dgi *DatagramIterator) panic(len int8) {
+	fmt.Printf("datagram iterator eof, read length: %d buff length: %d", len, dgi.read.Len())
 	panic(DatagramIteratorEOF{
 		fmt.Sprintf("datagram iterator eof, read length: %d buff length: %d", len, dgi.read.Len()),
 	})
@@ -236,24 +237,23 @@ func (dgi *DatagramIterator) readRemainder() []uint8 {
 }
 
 // Shorthand for unpackDtype
-func (dgi *DatagramIterator) unpackField(field dc.Field, buffer bytes.Buffer) {
+func (dgi *DatagramIterator) unpackField(field dc.Field, buffer *bytes.Buffer) {
 	dgi.unpackDtype(field.FieldType(), buffer)
 }
 
-func (dgi *DatagramIterator) unpackDtype(dtype dc.BaseType, buffer bytes.Buffer) {
-	fixed := (dtype.Type() == dc.T_METHOD || dtype.Type() == dc.T_STRUCT) || dtype.HasRange()
+func (dgi *DatagramIterator) unpackDtype(dtype dc.BaseType, buffer *bytes.Buffer) {
+	fixed := (dtype.Type() == dc.T_METHOD || dtype.Type() == dc.T_STRUCT) && dtype.HasRange()
 
 	if dtype.HasFixedSize() && !fixed {
-		if array := dtype.(*dc.ArrayType); array != nil && array.ElementType().HasRange() && dtype.Type() == dc.T_ARRAY {
+		if array, ok := dtype.(*dc.ArrayType); ok && array != nil && array.ElementType().HasRange() && dtype.Type() == dc.T_ARRAY {
 			for n := 0; n < int(array.Size()); n++ {
 				dgi.unpackDtype(array.ElementType(), buffer)
 			}
 		}
 
-		num := dtype.(*dc.NumericType)
 		data := dgi.readData(Dgsize_t(dtype.Size()))
 
-		if num != nil && num.HasRange() {
+		if num, ok := dtype.(*dc.NumericType); ok && num != nil {
 			if !num.WithinRange(data, 0) {
 				panic(FieldConstraintViolation{
 					fmt.Sprintf("field constraint violation: failed to unpack numeric type %s", dtype.Alias()),
@@ -262,6 +262,7 @@ func (dgi *DatagramIterator) unpackDtype(dtype dc.BaseType, buffer bytes.Buffer)
 		}
 
 		buffer.Write(data)
+		return
 	}
 
 	switch dtype.Type() {
@@ -292,7 +293,11 @@ func (dgi *DatagramIterator) unpackDtype(dtype dc.BaseType, buffer bytes.Buffer)
 			})
 		}
 	case dc.T_STRUCT:
-		strct := dtype.(*dc.Struct)
+		var strct *dc.Struct
+		if strct, _ = dtype.(*dc.Struct); strct == nil {
+			cls := dtype.(*dc.Class)
+			strct = &cls.Struct
+		}
 		fields := strct.GetNumFields()
 		for n := 0; n < fields; n++ {
 			dgi.unpackDtype(strct.GetField(n).FieldType(), buffer)
@@ -314,6 +319,7 @@ func (dgi *DatagramIterator) skipDtype(dtype dc.BaseType) {
 	if dtype.HasFixedSize() {
 		len := dtype.Size()
 		dgi.skip(Dgsize_t(len))
+		return
 	}
 
 	switch dtype.Type() {
@@ -321,7 +327,11 @@ func (dgi *DatagramIterator) skipDtype(dtype dc.BaseType) {
 		len := dgi.readSize()
 		dgi.skip(len)
 	case dc.T_STRUCT:
-		strct := dtype.(*dc.Struct)
+		var strct *dc.Struct
+		if strct, _ = dtype.(*dc.Struct); strct == nil {
+			cls := dtype.(*dc.Class)
+			strct = &cls.Struct
+		}
 		fields := strct.GetNumFields()
 		for n := 0; n < fields; n++ {
 			dgi.skipDtype(strct.GetField(n).FieldType())
