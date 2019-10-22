@@ -28,7 +28,6 @@ func NewDatagramIterator(dg *Datagram) *DatagramIterator {
 }
 
 func (dgi *DatagramIterator) panic(len int8) {
-	fmt.Printf("datagram iterator eof, read length: %d buff length: %d", len, dgi.read.Len())
 	panic(DatagramIteratorEOF{
 		fmt.Sprintf("datagram iterator eof, read length: %d buff length: %d", len, dgi.read.Len()),
 	})
@@ -246,6 +245,7 @@ func (dgi *DatagramIterator) unpackDtype(dtype dc.BaseType, buffer *bytes.Buffer
 
 	if dtype.HasFixedSize() && !fixed {
 		if array, ok := dtype.(*dc.ArrayType); ok && array != nil && array.ElementType().HasRange() && dtype.Type() == dc.T_ARRAY {
+			dgi.readSize()
 			for n := 0; n < int(array.Size()); n++ {
 				dgi.unpackDtype(array.ElementType(), buffer)
 			}
@@ -253,7 +253,7 @@ func (dgi *DatagramIterator) unpackDtype(dtype dc.BaseType, buffer *bytes.Buffer
 
 		data := dgi.readData(Dgsize_t(dtype.Size()))
 
-		if num, ok := dtype.(*dc.NumericType); ok && num != nil {
+		if num, ok := dtype.(*dc.NumericType); ok && num != nil && num.HasRange() {
 			if !num.WithinRange(data, 0) {
 				panic(FieldConstraintViolation{
 					fmt.Sprintf("field constraint violation: failed to unpack numeric type %s", dtype.Alias()),

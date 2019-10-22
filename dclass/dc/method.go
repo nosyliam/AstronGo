@@ -23,12 +23,21 @@ func NewMethod() *Method {
 	return m
 }
 
-func (m Method) GetParameterByName(name string) (err error, ok *Parameter) {
+func (m *Method) GetParameterByName(name string) (err error, ok *Parameter) {
 	if val, ok := m.parametersByName[name]; ok {
 		return nil, &val
 	}
 	return errors.New(fmt.Sprintf("unable to index field `%s`", name)), nil
 }
+
+func (m *Method) GetParameter(n int) *Parameter {
+	return &m.parameters[n]
+}
+
+func (m *Method) GetNumParameters() int {
+	return len(m.parameters)
+}
+
 func (m *Method) AddParameter(param *Parameter) (err error) {
 	if len(param.name) != 0 {
 		if _, ok := m.parametersByName[param.name]; ok {
@@ -49,7 +58,12 @@ func (m *Method) AddParameter(param *Parameter) (err error) {
 		}
 	}
 
+	m.constrained = m.constrained || param.dataType.HasRange()
 	return nil
+}
+
+func (m *Method) HasRange() bool {
+	return m.constrained
 }
 
 func (m *Method) GenerateHash(generator *HashGenerator) {

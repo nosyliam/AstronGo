@@ -90,6 +90,7 @@ func (c *Class) AddField(field Field) (err error) {
 		}
 	}
 
+	c.constrained = c.constrained || field.FieldType().HasRange()
 	return nil
 }
 
@@ -115,7 +116,11 @@ func (c *Class) AddInheritedField(field Field) {
 		}
 	}
 
-	c.constrained = field.FieldType().HasRange()
+	c.constrained = c.constrained || field.FieldType().HasRange()
+}
+
+func (c *Class) HasRange() bool {
+	return c.constrained
 }
 
 func (c *Class) GenerateHash(generator *HashGenerator) {

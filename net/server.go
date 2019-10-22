@@ -1,9 +1,9 @@
-// Original code derived from https://github.com/ortuman/jackal
+// Original code derived from c
 
 package net
 
 import (
-	"context"
+	"fmt"
 	"net"
 	"sync/atomic"
 	"time"
@@ -30,7 +30,7 @@ func (s *NetworkServer) Start(bindAddr string, errChan chan error) {
 	}
 }
 
-func (s *NetworkServer) Shutdown(ctx context.Context) error {
+func (s *NetworkServer) Shutdown() error {
 	if atomic.CompareAndSwapUint32(&s.listening, 1, 0) {
 		if err := s.ln.Close(); err != nil {
 			return err
@@ -48,7 +48,8 @@ func (s *NetworkServer) listenConn(address string, errChan chan error) error {
 
 	errChan <- nil
 	atomic.StoreUint32(&s.listening, 1)
-	for atomic.LoadUint32(&s.listening) == 1 {
+	fmt.Print(atomic.LoadUint32(&s.listening))
+	for {
 		conn, err := ln.Accept()
 		if err == nil {
 			s.Handler.handleConnect(conn)

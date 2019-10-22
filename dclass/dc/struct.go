@@ -42,6 +42,14 @@ func (s Struct) GetFieldById(id uint) (field *Field, ok bool) {
 	return nil, false
 }
 
+func (s Struct) GetField(n int) Field {
+	return s.fields[n]
+}
+
+func (s *Struct) GetNumFields() int {
+	return len(s.fields)
+}
+
 func (s *Struct) AddField(field Field) (err error) {
 	if _, ok := field.(*MolecularField); ok {
 		return errors.New("structures cannot contain methods")
@@ -77,8 +85,12 @@ func (s *Struct) AddField(field Field) (err error) {
 		}
 	}
 
-	s.constrained = field.FieldType().HasRange()
+	s.constrained = s.constrained || field.FieldType().HasRange()
 	return nil
+}
+
+func (s *Struct) HasRange() bool {
+	return s.constrained
 }
 
 func (s *Struct) GenerateHash(generator *HashGenerator) {

@@ -50,7 +50,13 @@ func (a *ArrayType) ElementType() BaseType { return a.elemType }
 
 func (a *ArrayType) HasRange() bool      { return !a.arrayRange.IsEmpty() }
 func (a *ArrayType) Range() NumericRange { return a.arrayRange }
+func (a *ArrayType) WithinRange(data []byte, length uint64) bool {
+	if a.arraySize > 0 {
+		return a.arraySize == uint(length)
+	}
 
+	return a.arrayRange.Min.Uinteger < length && a.arrayRange.Max.Uinteger > length
+}
 func (a *ArrayType) DefaultValue() interface{} {
 	switch a.dataType {
 	case T_ARRAY, T_BLOB, T_STRING:

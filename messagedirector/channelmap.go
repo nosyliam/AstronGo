@@ -90,6 +90,7 @@ func channelRoutine(buf <-chan interface{}, channel util.Channel_t) {
 							idx++
 						}
 					}
+					for _, rng := range
 					subscribers = subscribers[:idx]
 				}
 			case util.Datagram:

@@ -139,24 +139,24 @@ func TestDatagramIterator_Unpack(t *testing.T) {
 		dg.AddInt8(3)
 		dg.AddInt8(4)
 		dg.AddInt8(5)
-		dg.AddSize(12)
 		for n := 0; n < 12; n++ {
 			dg.AddInt8(3)
 		}
-		dg.AddSize(4)
-		for n := 0; n < 4; n++ {
-			dg.AddInt8(99)
+		dg.AddSize(7)
+		for n := 0; n < 7; n++ {
+			dg.AddInt8(15)
 		}
 
 		dgi = NewDatagramIterator(&dg)
-		//defer func() {
-		//	if r := recover(); r == nil {
-		//		errChan <- "array constraint violation test failed"
-		//	} else { fmt.Println(r) }
-		//	errChan <- ""
-		//}()
+		defer func() {
+			if r := recover(); r == nil {
+				errChan <- "array constraint violation test failed"
+			}
+			errChan <- ""
+		}()
 		dgi.unpackDtype(cls, buff)
 	}()
+
 	if err := <-errChan; err != "" {
 		t.Errorf(err)
 	}
