@@ -5,6 +5,8 @@ import (
 	"sync"
 )
 
+var lock sync.Mutex
+
 type Range struct {
 	min util.Channel_t
 	max util.Channel_t
@@ -23,10 +25,10 @@ type Subscriber struct {
 
 type ChannelMap struct {
 	// Subscriptions map channels to a chan which accepts datagram or Subscriber objects
-	subscriptions sync.Map
+	subscriptions map[util.Channel_t]<-chan interface{}
 
-	// Ranges maps a range to a chan which accepts datagram or Subscriber objects
-	ranges sync.Map
+	// Ranges maps a range to a list of Subscriber objects
+	ranges map[Range][]*Subscriber
 }
 
 func (s *Subscriber) Subscribed(ch util.Channel_t) bool {
@@ -45,26 +47,57 @@ func (s *Subscriber) Subscribed(ch util.Channel_t) bool {
 	return false
 }
 
-func (c *ChannelMap) SubscribeRange(p *Subscriber, rng Range) {
+func (c *ChannelMap) init() {
+	c.subscriptions = make(map[util.Channel_t]<-chan interface{}, 0)
+	c.ranges = make(map[Range][]*Subscriber, 0)
+}
 
+func (c *ChannelMap) SubscribeRange(p *Subscriber, rng Range) {
+	lock.Lock()
+	defer lock.Unlock()
+
+	c.ranges[rng] = append(c.ranges[rng], p)
+	p.ranges = append(p.ranges, rng)
+	// Iterate through all channels that are ch>rng.Min && ch<rng.Max and push our subscriber.
+	for ch, _ := range c.subscriptions {
+		if ch > rng.min && ch < rng.max {
+			c.SubscribeChannel(p, ch)
+		}
+	}
+}
+
+// Unsubscribing from a channel is a little more complicated; we must go through all of the ranges that contain
+//  our subscriber and calculate new ranges so that there is no overlap with channels that are supposed to 'go silent'
+func (c *ChannelMap) UnsubscribeRange(p *Subscriber, rng Range) {
+	lock.Lock()
+	defer lock.Unlock()
+
+	for n, rng := range p.ranges {
+
+	}
 }
 
 func (c *ChannelMap) SubscribeChannel(p *Subscriber, ch util.Channel_t) {
-	if p.Subscribed(ch) {
-		return
+	lock.Lock()
+	defer lock.Unlock()
+
+	// Redundant, but we cannot check for range subscriptions when subscribing to a single channel
+	for _, c := range p.channels {
+		if c == ch {
+			return
+		}
 	}
 
 	p.channels = append(p.channels, ch)
-	if _, ok := c.subscriptions.Load(ch); !ok {
+	if _, ok := c.subscriptions[ch]; !ok {
 		rdchan := make(chan interface{})
 		go channelRoutine(rdchan, ch)
 		rdchan <- *p
-		c.subscriptions.Store(ch, rdchan)
+		c.subscriptions[ch] = rdchan
 	}
-
 }
 
-// channelRoutine implements a goroutine which continually reads a given chan for datagram and subscriber objects.
+// channelRoutine implements a goroutine which continually reads a given chan for datagrams or subscriber objects.
 //  When given a datagram, it assumes the channel associated with the routine is a receiver and will route the
 //  the datagram to all of it's subscribers. When given a subscriber, it will append the object to it's subscribers
 //  list; however, if the subscriber is inactive (denoted by subscriber.active) it assumes that a removal operation
@@ -90,8 +123,11 @@ func channelRoutine(buf <-chan interface{}, channel util.Channel_t) {
 							idx++
 						}
 					}
-					for _, rng := range
 					subscribers = subscribers[:idx]
+					// Close dead channel
+					if len(subscribers) == 0 {
+						return
+					}
 				}
 			case util.Datagram:
 				for _, sub := range subscribers {
