@@ -17,23 +17,32 @@ type Range struct {
 }
 
 type RangeMap struct {
-	rng          Range
 	subscribers  []*Subscriber
 	intervals    map[Range][]*Subscriber
 	intervalSubs map[*Subscriber][]Range
 }
 
-func NewRangeMap(rng Range) *RangeMap {
-	rm := &RangeMap{rng: rng}
+func NewRangeMap() *RangeMap {
+	rm := &RangeMap{}
 	rm.intervals = make(map[Range][]*Subscriber, 0)
 	rm.intervalSubs = make(map[*Subscriber][]Range, 0)
 	return rm
 }
 
+// Returns an empty range or a list of ranges a subscriber is subscribed to; should usually never return []
+func (r *RangeMap) Ranges(p *Subscriber) []Range {
+	if rngs, ok := r.intervalSubs[p]; ok {
+		return rngs
+	} else {
+		return make([]Range, 0)
+	}
+}
+
+// Splits a range; e.g. [================] => [=======][==========]
 func (r *RangeMap) Split(rng Range, hi util.Channel_t, mid util.Channel_t, lo util.Channel_t, forward bool) Range {
 	irng := r.intervals[rng]
 	rnglo := Range{min: lo, max: mid}
-	rnghi := Range{min: mid, max: hi}
+	rnghi := Range{min: mid + 1, max: hi}
 
 	for _, sub := range irng {
 		intSubs := r.intervalSubs[sub]
@@ -60,27 +69,17 @@ func (r *RangeMap) Split(rng Range, hi util.Channel_t, mid util.Channel_t, lo ut
 }
 
 func (r *RangeMap) Add(rng Range, sub *Subscriber) {
-	if rng.min > r.rng.max || rng.max < r.rng.min {
-		// This should never happen, but the range is invalid.
-		panic(2)
-	}
-
-	if rng == r.rng {
-		r.subscribers = append(r.subscribers, sub)
-		return
-	}
-
 	// Check to see if the range is nested within or overlapping other ranges
 	if rngs, ok := r.intervalSubs[sub]; ok {
 		for _, erng := range rngs {
 			// [======{xxxxxxxx}========]
 			if erng.min <= rng.min && erng.max >= rng.max {
-				// Nested range. We don't need to do anything besides add it
-				break
+
+				return
 			}
 
 			// [=============={xxxx]xxxx}
-			if erng.max < rng.max || erng.min > rng.min {
+			if erng.max < rng.max && rng.min < erng.max {
 				nrng := r.Split(erng, erng.max, rng.min, erng.min, true)
 				trng := Range{min: erng.max, max: rng.max}
 				r.intervals[nrng] = append(r.intervals[nrng], sub)
@@ -90,7 +89,7 @@ func (r *RangeMap) Add(rng Range, sub *Subscriber) {
 			}
 
 			// {xxxx[xxxx}==============]
-			if erng.min > rng.min {
+			if erng.min > rng.min && rng.max > erng.min {
 				nrng := r.Split(erng, erng.max, rng.max, erng.min, false)
 				trng := Range{min: rng.min, max: erng.min}
 				r.intervals[nrng] = append(r.intervals[nrng], sub)
@@ -105,14 +104,68 @@ func (r *RangeMap) Add(rng Range, sub *Subscriber) {
 	r.intervalSubs[sub] = append(r.intervalSubs[sub], rng)
 }
 
-func (r *RangeMap) Send(ch util.Channel_t, dg util.Datagram) {
-	// Subscribers of the original parent interval should receive the datagram
-	if r.rng.min <= ch && r.rng.max >= ch {
-		for _, sub := range r.subscribers {
-			sub.participant.HandleDatagram(dg)
+func (r *RangeMap) removeSubInterval(p *Subscriber, rmv Range) {
+	if rng, ok := r.intervalSubs[p]; ok {
+		idx := 0
+		for _, v := range rng {
+			if v != rmv {
+				rng[idx] = v
+				idx++
+			}
+		}
+		rng = rng[:idx]
+	}
+}
+
+func (r *RangeMap) removeIntervalSub(int Range, p *Subscriber) {
+	if rng, ok := r.intervals[int]; ok {
+		idx := 0
+		for _, v := range rng {
+			if v != p {
+				rng[idx] = v
+				idx++
+			}
+		}
+		rng = rng[:idx]
+	}
+}
+
+func (r *RangeMap) Remove(rng Range, sub *Subscriber) {
+	if rngs, ok := r.intervalSubs[sub]; ok {
+		for _, erng := range rngs {
+			// [======{xxxxxxxx}========] => [=====][xxxxxxx][=======]
+			if erng.min <= rng.min && erng.max >= rng.max {
+				rng1 := r.Split(erng, erng.max, rng.min-1, erng.min, true)
+				rng2 := r.Split(rng1, rng1.min, rng.max, rng1.max, false)
+				r.removeSubInterval(sub, rng2)
+				r.removeIntervalSub(rng2, sub)
+				break
+			}
+
+			// [=============={xxxx]xxxx} => [===========][xxxx][????]
+			if erng.max < rng.max && rng.min < erng.max {
+				nrng := r.Split(erng, erng.max, rng.min-1, erng.min, true)
+				trng := Range{min: erng.max + 1, max: rng.max}
+				r.removeSubInterval(sub, nrng)
+				r.removeIntervalSub(nrng, sub)
+				r.Remove(trng, sub)
+				return
+			}
+
+			// {xxxx[xxxx}==============] => [????][xxxx][=============]
+			if erng.min > rng.min && rng.max > erng.min {
+				nrng := r.Split(erng, erng.max, rng.max, erng.min, false)
+				trng := Range{min: rng.min, max: erng.min - 1}
+				r.removeSubInterval(sub, nrng)
+				r.removeIntervalSub(nrng, sub)
+				r.Remove(trng, sub)
+				return
+			}
 		}
 	}
+}
 
+func (r *RangeMap) Send(ch util.Channel_t, dg util.Datagram) {
 	for rng, subs := range r.intervals {
 		if rng.min <= ch && rng.max >= ch {
 			for _, sub := range subs {
@@ -135,10 +188,10 @@ type Subscriber struct {
 
 type ChannelMap struct {
 	// Subscriptions map channels to a chan which accepts datagram or Subscriber objects
-	subscriptions map[util.Channel_t]<-chan interface{}
+	subscriptions map[util.Channel_t]chan interface{}
 
-	// Ranges maps a range to a RangeMap, a structure which nests ranges
-	ranges map[Range]*RangeMap
+	// Ranges points to a RangeMap singularity
+	ranges *RangeMap
 }
 
 func (s *Subscriber) Subscribed(ch util.Channel_t) bool {
@@ -158,21 +211,23 @@ func (s *Subscriber) Subscribed(ch util.Channel_t) bool {
 }
 
 func (c *ChannelMap) init() {
-	c.subscriptions = make(map[util.Channel_t]<-chan interface{}, 0)
-	c.ranges = make(map[Range]*RangeMap, 0)
+	c.subscriptions = make(map[util.Channel_t]chan interface{}, 0)
+	c.ranges = NewRangeMap()
 }
 
 func (c *ChannelMap) SubscribeRange(p *Subscriber, rng Range) {
 	lock.Lock()
 	defer lock.Unlock()
 
-	p.ranges = append(p.ranges, rng)
 	// Remove single-channel subscriptions; we can't risk data being sent twice
 	for ch, _ := range c.subscriptions {
-		if ch > rng.min && ch < rng.max {
+		if rng.min <= ch && rng.max >= ch {
 			c.UnsubscribeChannel(p, ch)
 		}
 	}
+
+	c.ranges.Add(rng, p)
+	p.ranges = c.ranges.Ranges(p)
 }
 
 // Unsubscribing from a channel is a little more complicated; we must go through all of the ranges that contain
@@ -189,6 +244,14 @@ func (c *ChannelMap) UnsubscribeRange(p *Subscriber, rng Range) {
 func (c *ChannelMap) UnsubscribeChannel(p *Subscriber, ch util.Channel_t) {
 	lock.Lock()
 	defer lock.Unlock()
+
+	if chn, ok := c.subscriptions[ch]; ok {
+		p.active = false
+		chn <- *p
+		p.active = true
+	} else {
+
+	}
 }
 
 func (c *ChannelMap) SubscribeChannel(p *Subscriber, ch util.Channel_t) {
@@ -200,15 +263,17 @@ func (c *ChannelMap) SubscribeChannel(p *Subscriber, ch util.Channel_t) {
 	}
 
 	p.channels = append(p.channels, ch)
-	if _, ok := c.subscriptions[ch]; !ok {
+	if chn, ok := c.subscriptions[ch]; !ok {
 		rdchan := make(chan interface{})
 		go channelRoutine(rdchan, ch)
 		rdchan <- *p
 		c.subscriptions[ch] = rdchan
+	} else {
+		chn <- *p
 	}
 }
 
-func (c *ChannelMap) Channel(ch util.Channel_t) <-chan interface{} {
+func (c *ChannelMap) Channel(ch util.Channel_t) chan interface{} {
 	if chn, ok := c.subscriptions[ch]; !ok {
 		return chn
 	} else {
@@ -216,11 +281,7 @@ func (c *ChannelMap) Channel(ch util.Channel_t) <-chan interface{} {
 		rdchan := make(chan interface{})
 		go func() {
 			if dg, ok := (<-rdchan).(util.Datagram); ok {
-				for rng, rnmap := range c.ranges {
-					if rng.minBound <= ch && rng.maxBound >= ch {
-						rnmap.Send(ch, dg)
-					}
-				}
+				c.ranges.Send(ch, dg)
 			}
 		}()
 		return rdchan
@@ -233,9 +294,8 @@ func (c *ChannelMap) Channel(ch util.Channel_t) <-chan interface{} {
 //  the datagram to all of it's subscribers. When given a subscriber, it will append the object to it's subscribers
 //  list; however, if the subscriber is inactive (denoted by subscriber.active) it assumes that a removal operation
 //  operation is taking place and will attempt to a remove the subscriber from its subscribers list.
-func channelRoutine(buf <-chan interface{}, ch util.Channel_t) {
+func channelRoutine(buf chan interface{}, ch util.Channel_t) {
 	var subscribers []Subscriber
-	var rngmap *RangeMap // Range mappings are immutable so we can cache them
 	for {
 		select {
 		case v, ok := <-buf:
@@ -262,18 +322,7 @@ func channelRoutine(buf <-chan interface{}, ch util.Channel_t) {
 					}
 				}
 			case util.Datagram:
-				// We need to do this within the channel-subscription routine because we will never be able
-				//  to kow about range subscriptions created before the routine was started
-				if rngmap == nil {
-					for rng, rnmap := range channelMap.ranges {
-						if rng.minBound <= ch && rng.maxBound >= ch {
-							rngmap = rnmap
-						}
-					}
-				}
-				if rngmap != nil {
-					rngmap.Send(ch, data)
-				}
+				channelMap.ranges.Send(ch, data)
 
 				for _, sub := range subscribers {
 					sub.participant.HandleDatagram(data)
