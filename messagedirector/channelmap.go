@@ -1,7 +1,7 @@
 package messagedirector
 
 import (
-	"astrongo/util"
+	. "astrongo/util"
 	"sync"
 )
 
@@ -9,8 +9,8 @@ var lock sync.Mutex
 var channelMap *ChannelMap
 
 type Range struct {
-	min util.Channel_t
-	max util.Channel_t
+	min Channel_t
+	max Channel_t
 }
 
 type RangeMap struct {
@@ -36,7 +36,7 @@ func (r *RangeMap) Ranges(p *Subscriber) []Range {
 }
 
 // Splits a range; e.g. [================] => [=======][==========]
-func (r *RangeMap) Split(rng Range, hi util.Channel_t, mid util.Channel_t, lo util.Channel_t, forward bool) Range {
+func (r *RangeMap) Split(rng Range, hi Channel_t, mid Channel_t, lo Channel_t, forward bool) Range {
 	irng := r.intervals[rng]
 	rnglo := Range{lo, mid}
 	rnghi := Range{mid + 1, hi}
@@ -241,7 +241,7 @@ func (r *RangeMap) remove(rng Range, sub *Subscriber) {
 	}
 }
 
-func (r *RangeMap) Send(ch util.Channel_t, dg util.Datagram) {
+func (r *RangeMap) Send(ch Channel_t, dg Datagram) {
 	lock.Lock()
 	defer lock.Unlock()
 
@@ -259,7 +259,7 @@ func (r *RangeMap) Send(ch util.Channel_t, dg util.Datagram) {
 type Subscriber struct {
 	participant MDParticipant
 
-	channels []util.Channel_t
+	channels []Channel_t
 	ranges   []Range
 
 	active bool
@@ -273,7 +273,7 @@ type ChannelMap struct {
 	ranges *RangeMap
 }
 
-func (s *Subscriber) Subscribed(ch util.Channel_t) bool {
+func (s *Subscriber) Subscribed(ch Channel_t) bool {
 	for _, c := range s.channels {
 		if c == ch {
 			return true
@@ -311,7 +311,7 @@ func (c *ChannelMap) UnsubscribeRange(p *Subscriber, rng Range) {
 
 }
 
-func (c *ChannelMap) UnsubscribeChannel(p *Subscriber, ch util.Channel_t) {
+func (c *ChannelMap) UnsubscribeChannel(p *Subscriber, ch Channel_t) {
 	if chn, ok := c.subscriptions.Load(ch); ok {
 		chn := chn.(chan interface{})
 		p.active = false
@@ -332,7 +332,14 @@ func (c *ChannelMap) UnsubscribeChannel(p *Subscriber, ch util.Channel_t) {
 	}
 }
 
-func (c *ChannelMap) SubscribeChannel(p *Subscriber, ch util.Channel_t) {
+func (c *ChannelMap) UnsubscribeAll(p *Subscriber) {
+	c.UnsubscribeRange(p, Range{0, CHANNEL_MAX})
+	for _, ch := range p.channels {
+		c.UnsubscribeChannel(p, ch)
+	}
+}
+
+func (c *ChannelMap) SubscribeChannel(p *Subscriber, ch Channel_t) {
 	if p.Subscribed(ch) {
 		return
 	}
@@ -343,14 +350,13 @@ func (c *ChannelMap) SubscribeChannel(p *Subscriber, ch util.Channel_t) {
 		go channelRoutine(rdchan, ch)
 		rdchan <- p
 		c.subscriptions.Store(ch, rdchan)
-
 	} else {
 		chn := chn.(chan interface{})
 		chn <- p
 	}
 }
 
-func (c *ChannelMap) Channel(ch util.Channel_t) chan interface{} {
+func (c *ChannelMap) Channel(ch Channel_t) chan interface{} {
 	if chn, ok := c.subscriptions.Load(ch); ok {
 		chn := chn.(chan interface{})
 		return chn
@@ -358,7 +364,7 @@ func (c *ChannelMap) Channel(ch util.Channel_t) chan interface{} {
 		// Default to range lookup
 		rdchan := make(chan interface{})
 		go func() {
-			if dg, ok := (<-rdchan).(util.Datagram); ok {
+			if dg, ok := (<-rdchan).(Datagram); ok {
 				c.ranges.Send(ch, dg)
 			}
 		}()
@@ -372,7 +378,7 @@ func (c *ChannelMap) Channel(ch util.Channel_t) chan interface{} {
 //  the datagram to all of it's subscribers. When given a subscriber, it will append the object to it's subscribers
 //  list; however, if the subscriber is inactive (denoted by subscriber.active) it assumes that a removal operation
 //  operation is taking place and will attempt to a remove the subscriber from its subscribers list.
-func channelRoutine(buf chan interface{}, ch util.Channel_t) {
+func channelRoutine(buf chan interface{}, ch Channel_t) {
 	var subscribers []*Subscriber
 	for {
 		select {
@@ -400,7 +406,7 @@ func channelRoutine(buf chan interface{}, ch util.Channel_t) {
 						return
 					}
 				}
-			case util.Datagram:
+			case Datagram:
 				channelMap.ranges.Send(ch, data)
 
 				for _, sub := range subscribers {

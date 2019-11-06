@@ -1,7 +1,7 @@
 package net
 
 import (
-	"astrongo/util"
+	. "astrongo/util"
 	"bytes"
 	"encoding/binary"
 	"errors"
@@ -12,8 +12,8 @@ import (
 // DatagramHandler is an interface for which structures that can accept datagrams may
 //  implement to accept datagrams from a client, such as an MD participant.
 type DatagramHandler interface {
-	HandleDatagram(util.Datagram)
-	Terminate()
+	HandleDatagram(Datagram)
+	Terminate(error)
 }
 
 type Client struct {
@@ -37,16 +37,16 @@ func (c *Client) shutdown() {
 }
 
 func (c *Client) defragment() {
-	for c.buff.Len() > util.Dgsize {
+	for c.buff.Len() > Dgsize {
 		data := c.buff.Bytes()
-		sz := binary.LittleEndian.Uint32(data[0:util.Dgsize])
-		if c.buff.Len() > int(sz+util.Dgsize) {
-			overreadSz := c.buff.Len() - int(sz) - int(util.Dgsize)
-			dg := util.NewDatagram()
-			dg.Write(data[util.Dgsize : sz+util.Dgsize])
+		sz := binary.LittleEndian.Uint32(data[0:Dgsize])
+		if c.buff.Len() > int(sz+Dgsize) {
+			overreadSz := c.buff.Len() - int(sz) - int(Dgsize)
+			dg := NewDatagram()
+			dg.Write(data[Dgsize : sz+Dgsize])
 			if 0 < overreadSz {
 				c.buff.Truncate(0)
-				c.buff.Write(data[sz+util.Dgsize : sz+util.Dgsize+uint32(overreadSz)])
+				c.buff.Write(data[sz+Dgsize : sz+Dgsize+uint32(overreadSz)])
 			} else {
 				// No overread
 				c.buff.Truncate(0)
@@ -65,12 +65,12 @@ func (c *Client) processInput(len int, data []byte) {
 	c.Mutex.Lock()
 
 	// Check if we have enough data for a single datagram
-	if c.buff.Len() == 0 && len > util.Dgsize {
-		sz := binary.LittleEndian.Uint32(data[0:util.Dgsize])
-		if sz == uint32(len-util.Dgsize) {
+	if c.buff.Len() == 0 && len > Dgsize {
+		sz := binary.LittleEndian.Uint32(data[0:Dgsize])
+		if sz == uint32(len-Dgsize) {
 			// We have enough data for a full datagram; send it off
-			dg := util.NewDatagram()
-			dg.Write(data[util.Dgsize:])
+			dg := NewDatagram()
+			dg.Write(data[Dgsize:])
 			c.handler.HandleDatagram(dg)
 			c.Mutex.Unlock()
 			return
@@ -92,14 +92,14 @@ func (c *Client) read() {
 	}
 }
 
-func (c *Client) sendDatagram(datagram util.Datagram) {
-	var dg util.Datagram
-	dg = util.NewDatagram()
+func (c *Client) sendDatagram(datagram Datagram) {
+	var dg Datagram
+	dg = NewDatagram()
 
 	c.Mutex.Lock()
 	defer c.Mutex.Unlock()
 
-	dg.AddSize(util.Dgsize_t(datagram.Len()))
+	dg.AddSize(Dgsize_t(datagram.Len()))
 	dg.Write(datagram.Bytes())
 
 	if _, err := c.tr.WriteDatagram(dg); err != nil {
@@ -118,5 +118,5 @@ func (c *Client) sendDatagram(datagram util.Datagram) {
 }
 
 func (c *Client) disconnect(err error) {
-	c.handler.Terminate()
+	c.handler.Terminate(err)
 }

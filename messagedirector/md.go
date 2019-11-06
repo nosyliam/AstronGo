@@ -3,7 +3,7 @@ package messagedirector
 import (
 	"astrongo/core"
 	"astrongo/net"
-	"astrongo/util"
+	. "astrongo/util"
 	"fmt"
 	"github.com/apex/log"
 	gonet "net"
@@ -24,7 +24,7 @@ type MessageDirector struct {
 
 	// MD participants may directly queue datagarams to be routed by inserting it into the
 	// queue channel, where they will be processed asynchronously
-	Queue chan util.Datagram
+	Queue chan Datagram
 }
 
 func init() {
@@ -35,7 +35,7 @@ func init() {
 
 func Start() {
 	MD = &MessageDirector{}
-	MD.Queue = make(chan util.Datagram)
+	MD.Queue = make(chan Datagram)
 	MD.participants = make([]MDParticipant, 0)
 	MD.Handler = MD.Server
 
@@ -66,4 +66,12 @@ func (m *MessageDirector) queueLoop() {
 
 func (m *MessageDirector) handleConnect(conn gonet.Conn) {
 	NewMDParticipant(conn)
+}
+
+func (m *MessageDirector) PreroutePostRemove(sender Channel_t, dg Datagram) {
+	// TODO
+}
+
+func (m *MessageDirector) RecallPostRemoves(sender Channel_t) {
+	// TODO
 }
