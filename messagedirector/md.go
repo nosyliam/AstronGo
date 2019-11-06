@@ -16,7 +16,6 @@ var MD *MessageDirector
 type MessageDirector struct {
 	net.Server
 	net.NetworkServer
-	ChannelMap
 
 	// Connections within the context of the MessageDirector are represented as
 	// participants; however, clients and objects on the SS may function as participants
