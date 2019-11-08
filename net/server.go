@@ -1,4 +1,4 @@
-// Original code derived from c
+// Original code derived from https://github.com/ortuman/jackal
 
 package net
 

@@ -248,7 +248,7 @@ func (r *RangeMap) Send(ch Channel_t, dg Datagram) {
 	for rng, subs := range r.intervals {
 		if rng.min <= ch && rng.max >= ch {
 			for _, sub := range subs {
-				go sub.participant.HandleDatagram(dg)
+				go sub.participant.HandleDatagram(dg, NewDatagramIterator(&dg))
 			}
 		}
 	}
@@ -410,7 +410,7 @@ func channelRoutine(buf chan interface{}, ch Channel_t) {
 				channelMap.ranges.Send(ch, data)
 
 				for _, sub := range subscribers {
-					go sub.participant.HandleDatagram(data)
+					go sub.participant.HandleDatagram(data, NewDatagramIterator(&data))
 				}
 			}
 		}

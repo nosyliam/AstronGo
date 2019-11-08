@@ -12,7 +12,11 @@ import (
 // DatagramHandler is an interface for which structures that can accept datagrams may
 //  implement to accept datagrams from a client, such as an MD participant.
 type DatagramHandler interface {
-	HandleDatagram(Datagram)
+	// Handles a message received from the client
+	ReceiveDatagram(Datagram)
+	// Handles a message received from the MD
+	HandleDatagram(Datagram, *DatagramIterator)
+
 	Terminate(error)
 }
 
@@ -53,7 +57,7 @@ func (c *Client) defragment() {
 			}
 
 			c.Lock()
-			c.handler.HandleDatagram(dg)
+			c.handler.ReceiveDatagram(dg)
 			c.Unlock()
 		} else {
 			break
@@ -71,7 +75,7 @@ func (c *Client) processInput(len int, data []byte) {
 			// We have enough data for a full datagram; send it off
 			dg := NewDatagram()
 			dg.Write(data[Dgsize:])
-			c.handler.HandleDatagram(dg)
+			c.handler.ReceiveDatagram(dg)
 			c.Mutex.Unlock()
 			return
 		}
@@ -92,7 +96,7 @@ func (c *Client) read() {
 	}
 }
 
-func (c *Client) sendDatagram(datagram Datagram) {
+func (c *Client) SendDatagram(datagram Datagram) {
 	var dg Datagram
 	dg = NewDatagram()
 

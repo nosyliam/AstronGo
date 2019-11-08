@@ -3,6 +3,7 @@ package messagedirector
 import (
 	"astrongo/net"
 	. "astrongo/util"
+	"errors"
 	gonet "net"
 	"time"
 )
@@ -26,9 +27,12 @@ type MDParticipantBase struct {
 
 	subscriber  *Subscriber
 	postRemoves map[Channel_t][]Datagram
+
+	name string
+	url  string
 }
 
-func (m *MDParticipantBase) initialize() {
+func (m *MDParticipantBase) init() {
 	m.postRemoves = make(map[Channel_t][]Datagram)
 	MD.participants = append(MD.participants, m)
 }
@@ -95,6 +99,7 @@ type MDNetworkParticipant struct {
 
 func NewMDParticipant(conn gonet.Conn) *MDNetworkParticipant {
 	participant := &MDNetworkParticipant{conn: conn}
+	participant.MDParticipantBase.init()
 	socket := net.NewSocketTransport(conn, 60*time.Second)
 
 	participant.client = net.NewClient(socket, participant)
@@ -102,8 +107,51 @@ func NewMDParticipant(conn gonet.Conn) *MDNetworkParticipant {
 	return participant
 }
 
-func (m *MDNetworkParticipant) HandleDatagram(dg Datagram) {
+func (m *MDNetworkParticipant) HandleDatagram(dg Datagram, dgi *DatagramIterator) {
+	m.client.SendDatagram(dg)
+}
 
+func (m *MDNetworkParticipant) ReceiveDatagram(dg Datagram) {
+	defer func() {
+		if r := recover(); r != nil {
+			if _, ok := r.(DatagramIteratorEOF); ok {
+				m.Terminate(errors.New("MDNetworkParticipant received a truncated datagram."))
+			} else {
+				m.Terminate(r.(error))
+			}
+		}
+	}()
+
+	dgi := NewDatagramIterator(&dg)
+	channels := dgi.ReadUint8()
+	if channels == 1 && dgi.ReadChannel() == CONTROL_MESSAGE {
+		msg := dgi.ReadUint16()
+		switch msg {
+		case CONTROL_ADD_CHANNEL:
+			m.SubscribeChannel(dgi.ReadChannel())
+		case CONTROL_REMOVE_CHANNEL:
+			m.UnsubscribeChannel(dgi.ReadChannel())
+		case CONTROL_ADD_RANGE:
+			m.SubscribeRange(Range{dgi.ReadChannel(), dgi.ReadChannel()})
+		case CONTROL_REMOVE_RANGE:
+			m.UnsubscribeRange(Range{dgi.ReadChannel(), dgi.ReadChannel()})
+		case CONTROL_ADD_POST_REMOVE:
+			m.AddPostRemove(dgi.ReadChannel(), *dgi.ReadDatagram())
+		case CONTROL_CLEAR_POST_REMOVES:
+			m.ClearPostRemoves(dgi.ReadChannel())
+		case CONTROL_SET_CON_NAME:
+			m.name = dgi.ReadString()
+		case CONTROL_SET_CON_URL:
+			m.url = dgi.ReadString()
+		case CONTROL_LOG_MESSAGE:
+			// TODO
+		default:
+			MDLog.Errorf("MDNetworkParticipant got unknown control message with message type: %s", msg)
+		}
+		return
+	}
+
+	m.RouteDatagram(dg)
 }
 
 func (m *MDNetworkParticipant) Terminate(err error) {

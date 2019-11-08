@@ -59,8 +59,31 @@ func Start() {
 }
 
 func (m *MessageDirector) queueLoop() {
+	finish := make(chan bool)
 	for dg := range MD.Queue {
-		fmt.Println(dg)
+		go func() {
+			defer func() {
+				if r := recover(); r != nil {
+					if _, ok := r.(DatagramIteratorEOF); ok {
+						MDLog.Error("MD received truncated datagram header from an unknown participant")
+					}
+					finish <- true
+				}
+			}()
+
+			var receivers []Channel_t
+			dgi := NewDatagramIterator(&dg)
+			chanCount := dgi.ReadUint8()
+			for n := 0; uint8(n) < chanCount; n++ {
+				receivers = append(receivers, dgi.ReadChannel())
+			}
+
+			// Send out datagram to every receiver
+			for _, recv := range receivers {
+				channelMap.Channel(recv) <- dg
+			}
+		}()
+		<-finish
 	}
 }
 

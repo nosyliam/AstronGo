@@ -14,26 +14,26 @@ func TestDatagramIterator_Numerical(t *testing.T) {
 	dg = NewDatagram()
 	dg.AddInt8(8)
 	dgi = NewDatagramIterator(&dg)
-	require.EqualValues(t, dgi.readInt8(), 8)
+	require.EqualValues(t, dgi.ReadInt8(), 8)
 
 	dg = NewDatagram()
 	dg.AddInt32(1234)
 	dg.AddInt64(-123456789)
 	dgi = NewDatagramIterator(&dg)
-	require.EqualValues(t, dgi.readInt32(), 1234)
-	require.EqualValues(t, dgi.readInt64(), -123456789)
+	require.EqualValues(t, dgi.ReadInt32(), 1234)
+	require.EqualValues(t, dgi.ReadInt64(), -123456789)
 
 	dg = NewDatagram()
 	dg.AddFloat32(12.378839)
 	dg.AddFloat64(128883.218389123)
 	dgi = NewDatagramIterator(&dg)
-	require.EqualValues(t, dgi.readFloat32(), float32(12.378839))
-	require.EqualValues(t, dgi.readFloat64(), float64(128883.218389123))
+	require.EqualValues(t, dgi.ReadFloat32(), float32(12.378839))
+	require.EqualValues(t, dgi.ReadFloat64(), float64(128883.218389123))
 
 	dg = NewDatagram()
 	dg.AddBool(true)
 	dgi = NewDatagramIterator(&dg)
-	require.True(t, dgi.readBool())
+	require.True(t, dgi.ReadBool())
 }
 
 func TestDatagramIterator_ReadString(t *testing.T) {
@@ -43,7 +43,7 @@ func TestDatagramIterator_ReadString(t *testing.T) {
 	dg = NewDatagram()
 	dg.AddString("hello")
 	dgi = NewDatagramIterator(&dg)
-	require.EqualValues(t, dgi.readString(), "hello")
+	require.EqualValues(t, dgi.ReadString(), "hello")
 }
 
 func TestDatagramIterator_ReadData(t *testing.T) {
@@ -53,18 +53,18 @@ func TestDatagramIterator_ReadData(t *testing.T) {
 	dg = NewDatagram()
 	dg.AddDataBlob([]byte{'a', 'b', 'c', 'd'})
 	dgi = NewDatagramIterator(&dg)
-	require.ElementsMatch(t, dgi.readBlob(), []uint8{'a', 'b', 'c', 'd'})
+	require.ElementsMatch(t, dgi.ReadBlob(), []uint8{'a', 'b', 'c', 'd'})
 
 	dg = NewDatagram()
 	dg.AddString("test123")
 	dgi = NewDatagramIterator(&dg)
-	require.ElementsMatch(t, dgi.readData(8), []uint8{7, 0, 0, 0, 't', 'e', 's', 't'})
+	require.ElementsMatch(t, dgi.ReadData(8), []uint8{7, 0, 0, 0, 't', 'e', 's', 't'})
 
 	dg = NewDatagram()
 	dg.AddString("test123")
 	dgi = NewDatagramIterator(&dg)
-	dgi.readData(8)
-	require.ElementsMatch(t, dgi.readRemainder(), []byte{'1', '2', '3'})
+	dgi.ReadData(8)
+	require.ElementsMatch(t, dgi.ReadRemainder(), []byte{'1', '2', '3'})
 }
 
 func TestDatagramIterator_Unpack(t *testing.T) {
@@ -88,11 +88,11 @@ func TestDatagramIterator_Unpack(t *testing.T) {
 	dg.AddInt8(-100)
 	dg.AddInt16(-10000)
 	dgi = NewDatagramIterator(&dg)
-	dgi.unpackDtype(cls, buff)
+	dgi.UnpackDtype(cls, buff)
 	dg = NewDatagram()
 	dg.Write(buff.Bytes())
 	dgi = NewDatagramIterator(&dg)
-	require.EqualValues(t, dgi.readUint32(), 123456789)
+	require.EqualValues(t, dgi.ReadUint32(), 123456789)
 
 	errChan := make(chan string)
 	go func() {
@@ -107,7 +107,7 @@ func TestDatagramIterator_Unpack(t *testing.T) {
 			}
 			errChan <- ""
 		}()
-		dgi.unpackDtype(cls, buff)
+		dgi.UnpackDtype(cls, buff)
 	}()
 	if err := <-errChan; err != "" {
 		t.Errorf(err)
@@ -125,7 +125,7 @@ func TestDatagramIterator_Unpack(t *testing.T) {
 			}
 			errChan <- ""
 		}()
-		dgi.unpackDtype(cls, buff)
+		dgi.UnpackDtype(cls, buff)
 	}()
 	if err := <-errChan; err != "" {
 		t.Errorf(err)
@@ -154,7 +154,7 @@ func TestDatagramIterator_Unpack(t *testing.T) {
 			}
 			errChan <- ""
 		}()
-		dgi.unpackDtype(cls, buff)
+		dgi.UnpackDtype(cls, buff)
 	}()
 
 	if err := <-errChan; err != "" {
