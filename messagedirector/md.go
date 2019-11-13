@@ -24,7 +24,10 @@ type MessageDirector struct {
 
 	// MD participants may directly queue datagarams to be routed by inserting it into the
 	// queue channel, where they will be processed asynchronously
-	Queue chan Datagram
+	Queue chan struct {
+		dg Datagram
+		md MDParticipant
+	}
 }
 
 func init() {
@@ -35,9 +38,12 @@ func init() {
 
 func Start() {
 	MD = &MessageDirector{}
-	MD.Queue = make(chan Datagram)
+	MD.Queue = make(chan struct {
+		dg Datagram
+		md MDParticipant
+	})
 	MD.participants = make([]MDParticipant, 0)
-	MD.Handler = MD.Server
+	MD.Handler = MD
 
 	bindAddr := core.Config.MessageDirector.Bind
 	if bindAddr == "" {
@@ -60,19 +66,19 @@ func Start() {
 
 func (m *MessageDirector) queueLoop() {
 	finish := make(chan bool)
-	for dg := range MD.Queue {
+	for obj := range MD.Queue {
 		go func() {
 			defer func() {
 				if r := recover(); r != nil {
 					if _, ok := r.(DatagramIteratorEOF); ok {
-						MDLog.Error("MD received truncated datagram header from an unknown participant")
+						MDLog.Errorf("MD received truncated datagram header from participant %s", obj.md.Name())
 					}
 					finish <- true
 				}
 			}()
 
 			var receivers []Channel_t
-			dgi := NewDatagramIterator(&dg)
+			dgi := NewDatagramIterator(&obj.dg)
 			chanCount := dgi.ReadUint8()
 			for n := 0; uint8(n) < chanCount; n++ {
 				receivers = append(receivers, dgi.ReadChannel())
@@ -80,14 +86,16 @@ func (m *MessageDirector) queueLoop() {
 
 			// Send out datagram to every receiver
 			for _, recv := range receivers {
-				channelMap.Channel(recv) <- dg
+				channelMap.Channel(recv) <- &obj.dg
 			}
+			finish <- true
 		}()
 		<-finish
 	}
 }
 
-func (m *MessageDirector) handleConnect(conn gonet.Conn) {
+func (m *MessageDirector) HandleConnect(conn gonet.Conn) {
+	MDLog.Infof("Incoming connection from %s", conn.RemoteAddr())
 	NewMDParticipant(conn)
 }
 

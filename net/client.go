@@ -29,6 +29,7 @@ type Client struct {
 
 func NewClient(tr Transport, handler DatagramHandler) *Client {
 	client := &Client{tr: tr, handler: handler}
+	client.initialize()
 	return client
 }
 

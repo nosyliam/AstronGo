@@ -12,7 +12,7 @@ import (
 // Server is an interface which allows a network listening mechanism to pass accepted connections to
 //  an actual server, like a CA or MD
 type Server interface {
-	handleConnect(net.Conn)
+	HandleConnect(net.Conn)
 }
 
 // NetworkServer is a base class which provides methods that accept connections.
@@ -52,7 +52,7 @@ func (s *NetworkServer) listenConn(address string, errChan chan error) error {
 	for {
 		conn, err := ln.Accept()
 		if err == nil {
-			s.Handler.handleConnect(conn)
+			s.Handler.HandleConnect(conn)
 			continue
 		}
 	}

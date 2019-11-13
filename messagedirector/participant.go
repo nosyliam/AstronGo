@@ -20,6 +20,8 @@ type MDParticipant interface {
 	SubscribeRange(Range)
 	UnsubscribeRange(Range)
 	UnsubscribeAll()
+
+	Name() string
 }
 
 type MDParticipantBase struct {
@@ -38,7 +40,10 @@ func (m *MDParticipantBase) init() {
 }
 
 func (m *MDParticipantBase) RouteDatagram(datagram Datagram) {
-	MD.Queue <- datagram
+	MD.Queue <- struct {
+		dg Datagram
+		md MDParticipant
+	}{datagram, m}
 }
 
 func (m *MDParticipantBase) PostRemove() {
@@ -77,6 +82,10 @@ func (m *MDParticipantBase) UnsubscribeRange(rng Range) {
 	channelMap.UnsubscribeRange(m.subscriber, rng)
 }
 
+func (m *MDParticipantBase) Name() string {
+	return m.name
+}
+
 func (m *MDParticipantBase) terminate() {
 	m.UnsubscribeAll()
 	m.PostRemove()
@@ -104,6 +113,7 @@ func NewMDParticipant(conn gonet.Conn) *MDNetworkParticipant {
 
 	participant.client = net.NewClient(socket, participant)
 	participant.subscriber = &Subscriber{participant: participant, active: true}
+
 	return participant
 }
 
@@ -146,7 +156,7 @@ func (m *MDNetworkParticipant) ReceiveDatagram(dg Datagram) {
 		case CONTROL_LOG_MESSAGE:
 			// TODO
 		default:
-			MDLog.Errorf("MDNetworkParticipant got unknown control message with message type: %s", msg)
+			MDLog.Errorf("MDNetworkParticipant got unknown control message with message type: %d", msg)
 		}
 		return
 	}
