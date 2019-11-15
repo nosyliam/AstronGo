@@ -36,6 +36,7 @@ type MDParticipantBase struct {
 
 func (m *MDParticipantBase) init() {
 	m.postRemoves = make(map[Channel_t][]Datagram)
+	m.subscriber = &Subscriber{participant: m, active: true}
 	MD.participants = append(MD.participants, m)
 }
 

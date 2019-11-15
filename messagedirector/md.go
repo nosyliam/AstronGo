@@ -7,7 +7,11 @@ import (
 	"fmt"
 	"github.com/apex/log"
 	gonet "net"
+	"os"
+	"os/signal"
 )
+
+const QUEUE_MAX = 128
 
 var MDLog *log.Entry
 
@@ -41,7 +45,7 @@ func Start() {
 	MD.Queue = make(chan struct {
 		dg Datagram
 		md MDParticipant
-	})
+	}, QUEUE_MAX)
 	MD.participants = make([]MDParticipant, 0)
 	MD.Handler = MD
 
@@ -60,37 +64,48 @@ func Start() {
 			MDLog.Fatal(err.Error())
 		}
 	}()
-	MD.Start(bindAddr, errChan)
 	go MD.queueLoop()
+	MD.Start(bindAddr, errChan)
 }
 
 func (m *MessageDirector) queueLoop() {
 	finish := make(chan bool)
-	for obj := range MD.Queue {
-		go func() {
-			defer func() {
-				if r := recover(); r != nil {
-					if _, ok := r.(DatagramIteratorEOF); ok {
-						MDLog.Errorf("MD received truncated datagram header from participant %s", obj.md.Name())
+	signalCh := make(chan os.Signal, 1)
+	signal.Notify(signalCh, os.Interrupt)
+
+	for {
+		select {
+		case obj := <-MD.Queue:
+			go func() {
+				defer func() {
+					if r := recover(); r != nil {
+						if _, ok := r.(DatagramIteratorEOF); ok {
+							MDLog.Errorf("MD received truncated datagram header from participant %s", obj.md.Name())
+						}
+						finish <- true
 					}
-					finish <- true
+				}()
+
+				var receivers []Channel_t
+				dgi := NewDatagramIterator(&obj.dg)
+				chanCount := dgi.ReadUint8()
+				for n := 0; uint8(n) < chanCount; n++ {
+					receivers = append(receivers, dgi.ReadChannel())
 				}
+
+				seekDg := Datagram(obj.dg)
+				seekDg.Next(int(dgi.Tell()))
+
+				// Send out datagram to every receiver
+				for _, recv := range receivers {
+					channelMap.Channel(recv) <- seekDg
+				}
+				finish <- true
 			}()
-
-			var receivers []Channel_t
-			dgi := NewDatagramIterator(&obj.dg)
-			chanCount := dgi.ReadUint8()
-			for n := 0; uint8(n) < chanCount; n++ {
-				receivers = append(receivers, dgi.ReadChannel())
-			}
-
-			// Send out datagram to every receiver
-			for _, recv := range receivers {
-				channelMap.Channel(recv) <- &obj.dg
-			}
-			finish <- true
-		}()
-		<-finish
+			<-finish
+		case <-signalCh:
+			return
+		}
 	}
 }
 
