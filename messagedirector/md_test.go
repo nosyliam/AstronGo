@@ -4,17 +4,31 @@ import (
 	"astrongo/core"
 	"astrongo/net"
 	. "astrongo/util"
+	"github.com/stretchr/testify/require"
 	gonet "net"
 	"src/github.com/tj/assert"
 	"testing"
 	"time"
 )
 
-const LATENCY = time.Millisecond * 1000
-
 var client *net.Client
+var client2 *net.Client
 var fakeParticipant *MDParticipantFake
+var fakeParticipant2 *MDParticipantFake2
 var msgQueue chan Datagram
+var msgQueue2 chan Datagram
+
+type MDParticipantFake2 struct{ MDParticipant }
+
+func (m *MDParticipantFake2) ReceiveDatagram(datagram Datagram) {
+	msgQueue2 <- datagram
+}
+
+func (m *MDParticipantFake2) HandleDatagram(datagram Datagram, dgi *DatagramIterator) {
+	msgQueue2 <- datagram
+}
+
+func (m *MDParticipantFake2) Terminate(error) {}
 
 func timeoutWrapper(timeout func(), tick func() bool) {
 	timeoutChan := time.After(2 * time.Second)
@@ -33,28 +47,33 @@ func timeoutWrapper(timeout func(), tick func() bool) {
 	}
 }
 
-func createClient() error {
+func createClient(p net.DatagramHandler) (client *net.Client, err error) {
 	conn, err := gonet.Dial("tcp", ":7199")
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	fakeParticipant = &MDParticipantFake{}
 	socket := net.NewSocketTransport(conn, time.Second*60)
-	client = net.NewClient(socket, fakeParticipant)
-	return nil
+	client = net.NewClient(socket, p)
+	return client, nil
 }
 
 func init() {
 	core.Config = &core.ServerConfig{MessageDirector: struct{ Bind string }{Bind: ""}}
 	msgQueue = make(chan Datagram)
+	msgQueue2 = make(chan Datagram)
 }
 
 func TestMD_Start(t *testing.T) {
 	go Start()
-	if err := createClient(); err != nil {
+	fakeParticipant = &MDParticipantFake{}
+
+	if client1, err := createClient(fakeParticipant); err != nil {
 		t.Fatal(err)
+	} else {
+		client = client1
 	}
+
 	for {
 		if len(MD.participants) != 0 {
 			break
@@ -126,4 +145,99 @@ func TestMD_MessageRoute(t *testing.T) {
 	dgi := NewDatagramIterator(&dgRecv)
 	assert.Equal(t, dgi.ReadChannel(), Channel_t(60))
 	assert.Equal(t, dgi.ReadUint16(), uint16(1337))
+}
+
+func TestMD_ControlUnsubscribe(t *testing.T) {
+	assert.Len(t, MD.participants, 1)
+	dg := NewDatagram()
+	dg.AddControlHeader(CONTROL_REMOVE_CHANNEL)
+	dg.AddChannel(50)
+	client.SendDatagram(dg)
+
+	timeoutWrapper(
+		func() {
+			t.Fatal("control unsubscribe timeout")
+		},
+		func() bool {
+			if _, ok := channelMap.subscriptions.Load(Channel_t(50)); !ok {
+				return true
+			}
+			return false
+		})
+}
+
+func TestMD_ControlSubscribeRange(t *testing.T) {
+	assert.Len(t, MD.participants, 1)
+	dg := NewDatagram()
+	dg.AddControlHeader(CONTROL_ADD_RANGE)
+	dg.AddChannel(1000)
+	dg.AddChannel(2000)
+	client.SendDatagram(dg)
+	time.Sleep(50 * time.Millisecond)
+
+	dg = NewDatagram()
+	dg.AddUint8(1)
+	dg.AddChannel(1500)
+	dg.AddChannel(60)
+	dg.AddUint16(1337)
+	MD.Queue <- struct {
+		dg Datagram
+		md MDParticipant
+	}{dg, nil}
+	<-msgQueue
+}
+
+func TestMD_ControlUnsubscribeRange(t *testing.T) {
+	assert.Len(t, MD.participants, 1)
+	dg := NewDatagram()
+	dg.AddControlHeader(CONTROL_REMOVE_RANGE)
+	dg.AddChannel(1400)
+	dg.AddChannel(1600)
+	client.SendDatagram(dg)
+
+	dg = NewDatagram()
+	dg.AddUint8(1)
+	dg.AddChannel(1500)
+	dg.AddChannel(60)
+	dg.AddUint16(1337)
+	MD.Queue <- struct {
+		dg Datagram
+		md MDParticipant
+	}{dg, nil}
+	time.Sleep(10 * time.Millisecond)
+	require.Empty(t, msgQueue)
+}
+
+func TestMD_PostRemove(t *testing.T) {
+	fakeParticipant2 = &MDParticipantFake2{}
+
+	if client, err := createClient(fakeParticipant2); err != nil {
+		t.Fatal(err)
+	} else {
+		client2 = client
+	}
+	for {
+		if len(MD.participants) != 1 {
+			break
+		}
+	}
+
+	dg := NewDatagram()
+	dg.AddControlHeader(CONTROL_ADD_CHANNEL)
+	dg.AddChannel(10000)
+	client2.SendDatagram(dg)
+
+	postRemove := NewDatagram()
+	postRemove.AddString("nabeeha says hi")
+
+	dg = NewDatagram()
+	dg.AddControlHeader(CONTROL_ADD_POST_REMOVE)
+	dg.AddChannel(10000)
+	dg.AddDatagram(&postRemove)
+	client.SendDatagram(dg)
+
+	time.Sleep(100 * time.Millisecond)
+	client.Close()
+	time.Sleep(100 * time.Millisecond)
+	<-msgQueue2
 }

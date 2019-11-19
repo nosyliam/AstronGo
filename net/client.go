@@ -122,6 +122,10 @@ func (c *Client) SendDatagram(datagram Datagram) {
 
 }
 
+func (c *Client) Close() {
+	c.tr.Close()
+}
+
 func (c *Client) disconnect(err error) {
 	c.handler.Terminate(err)
 }

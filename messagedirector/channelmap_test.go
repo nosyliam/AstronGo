@@ -19,6 +19,7 @@ func (m *MDParticipantFake) HandleDatagram(datagram Datagram, dgi *DatagramItera
 
 func (m *MDParticipantFake) Terminate(error) {}
 
+// This test is not very comprehensive; most of it is hand-checked
 func TestChannelMap_SubscribeRange(t *testing.T) {
 	pt1 := &MDParticipantFake{}
 	sub1 := &Subscriber{participant: MDParticipant(pt1), active: true}

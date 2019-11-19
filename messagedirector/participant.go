@@ -19,7 +19,6 @@ type MDParticipant interface {
 
 	SubscribeRange(Range)
 	UnsubscribeRange(Range)
-	UnsubscribeAll()
 
 	Name() string
 }
@@ -88,7 +87,7 @@ func (m *MDParticipantBase) Name() string {
 }
 
 func (m *MDParticipantBase) terminate() {
-	m.UnsubscribeAll()
+	channelMap.UnsubscribeAll(m.subscriber)
 	m.PostRemove()
 
 	for n, participant := range MD.participants {
@@ -96,8 +95,9 @@ func (m *MDParticipantBase) terminate() {
 			MD.participants = append(MD.participants[:n], MD.participants[n+1:]...)
 		}
 	}
-
 }
+
+func (m *MDParticipantBase) Terminate(err error) { /* virtual */ }
 
 // MDNetworkParticipant represents a downstream MD connection
 type MDNetworkParticipant struct {
@@ -167,5 +167,6 @@ func (m *MDNetworkParticipant) ReceiveDatagram(dg Datagram) {
 
 func (m *MDNetworkParticipant) Terminate(err error) {
 	MDLog.Infof("Lost connection from %s: %s", m.conn.RemoteAddr(), err.Error())
+	m.client.Close()
 	m.terminate()
 }
