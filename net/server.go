@@ -3,9 +3,11 @@
 package net
 
 import (
-	"fmt"
 	"net"
+	"os"
+	"os/signal"
 	"sync/atomic"
+	"syscall"
 	"time"
 )
 
@@ -47,9 +49,9 @@ func (s *NetworkServer) listenConn(address string, errChan chan error) error {
 	s.ln = ln
 
 	errChan <- nil
+	s.handleInterrupts()
 	atomic.StoreUint32(&s.listening, 1)
-	fmt.Print(atomic.LoadUint32(&s.listening))
-	for {
+	for atomic.LoadUint32(&s.listening) == 1 {
 		conn, err := ln.Accept()
 		if err == nil {
 			s.Handler.HandleConnect(conn)
@@ -57,4 +59,13 @@ func (s *NetworkServer) listenConn(address string, errChan chan error) error {
 		}
 	}
 	return nil
+}
+
+func (s *NetworkServer) handleInterrupts() {
+	c := make(chan os.Signal)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-c
+		s.Shutdown()
+	}()
 }

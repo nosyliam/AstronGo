@@ -93,7 +93,8 @@ func (m *MessageDirector) queueLoop() {
 					receivers = append(receivers, dgi.ReadChannel())
 				}
 
-				seekDg := Datagram(obj.dg)
+				seekDg := NewDatagram()
+				seekDg.Write(obj.dg.Bytes())
 				seekDg.Next(int(dgi.Tell()))
 
 				// Send out datagram to every receiver

@@ -59,7 +59,7 @@ func createClient(p net.DatagramHandler) (client *net.Client, err error) {
 }
 
 func init() {
-	core.Config = &core.ServerConfig{MessageDirector: struct{ Bind string }{Bind: ""}}
+	core.Config = &core.ServerConfig{MessageDirector: struct{ Bind string }{Bind: "127.0.0.1:7199"}}
 	msgQueue = make(chan Datagram)
 	msgQueue2 = make(chan Datagram)
 }
@@ -143,8 +143,8 @@ func TestMD_MessageRoute(t *testing.T) {
 	}{dg, nil}
 	dgRecv := <-msgQueue
 	dgi := NewDatagramIterator(&dgRecv)
-	assert.Equal(t, dgi.ReadChannel(), Channel_t(60))
-	assert.Equal(t, dgi.ReadUint16(), uint16(1337))
+	assert.Equal(t, Channel_t(60), dgi.ReadChannel())
+	assert.Equal(t, uint16(1337), dgi.ReadUint16())
 }
 
 func TestMD_ControlUnsubscribe(t *testing.T) {
@@ -176,10 +176,7 @@ func TestMD_ControlSubscribeRange(t *testing.T) {
 	time.Sleep(50 * time.Millisecond)
 
 	dg = NewDatagram()
-	dg.AddUint8(1)
-	dg.AddChannel(1500)
-	dg.AddChannel(60)
-	dg.AddUint16(1337)
+	dg.AddServerHeader(1500, 60, 1337)
 	MD.Queue <- struct {
 		dg Datagram
 		md MDParticipant
@@ -196,10 +193,7 @@ func TestMD_ControlUnsubscribeRange(t *testing.T) {
 	client.SendDatagram(dg)
 
 	dg = NewDatagram()
-	dg.AddUint8(1)
-	dg.AddChannel(1500)
-	dg.AddChannel(60)
-	dg.AddUint16(1337)
+	dg.AddServerHeader(1500, 60, 1337)
 	MD.Queue <- struct {
 		dg Datagram
 		md MDParticipant
@@ -216,28 +210,31 @@ func TestMD_PostRemove(t *testing.T) {
 	} else {
 		client2 = client
 	}
-	for {
-		if len(MD.participants) != 1 {
-			break
-		}
-	}
+
+	time.Sleep(200 * time.Millisecond)
 
 	dg := NewDatagram()
 	dg.AddControlHeader(CONTROL_ADD_CHANNEL)
 	dg.AddChannel(10000)
 	client2.SendDatagram(dg)
+	time.Sleep(100 * time.Millisecond)
 
 	postRemove := NewDatagram()
-	postRemove.AddString("nabeeha says hi")
+	postRemove.AddServerHeader(10000, 1, 0)
+	postRemove.AddUint32(0xDEADBEEF)
 
 	dg = NewDatagram()
 	dg.AddControlHeader(CONTROL_ADD_POST_REMOVE)
 	dg.AddChannel(10000)
-	dg.AddDatagram(&postRemove)
+	dg.AddBlob(&postRemove)
 	client.SendDatagram(dg)
 
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(10 * time.Millisecond)
 	client.Close()
-	time.Sleep(100 * time.Millisecond)
-	<-msgQueue2
+	time.Sleep(10 * time.Millisecond)
+	dg = <-msgQueue2
+	dgi := NewDatagramIterator(&dg)
+	dgi.ReadChannel() // Sender
+	dgi.ReadUint16()  // Message type
+	assert.Equal(t, uint32(0xDEADBEEF), dgi.ReadUint32())
 }

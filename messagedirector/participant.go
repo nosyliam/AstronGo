@@ -87,8 +87,8 @@ func (m *MDParticipantBase) Name() string {
 }
 
 func (m *MDParticipantBase) terminate() {
-	channelMap.UnsubscribeAll(m.subscriber)
 	m.PostRemove()
+	channelMap.UnsubscribeAll(m.subscriber)
 
 	for n, participant := range MD.participants {
 		if participant == m {
