@@ -32,6 +32,8 @@ type MessageDirector struct {
 		dg Datagram
 		md MDParticipant
 	}
+
+	upstream *MDUpstream
 }
 
 func init() {
@@ -52,6 +54,11 @@ func Start() {
 	bindAddr := core.Config.MessageDirector.Bind
 	if bindAddr == "" {
 		bindAddr = "127.0.0.1:7199"
+	}
+
+	connectAddr := core.Config.MessageDirector.Connect
+	if connectAddr != "" {
+		MD.upstream = NewMDUpstream(MD, connectAddr)
 	}
 
 	errChan := make(chan error)

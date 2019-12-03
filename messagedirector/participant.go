@@ -126,7 +126,7 @@ func (m *MDNetworkParticipant) ReceiveDatagram(dg Datagram) {
 	defer func() {
 		if r := recover(); r != nil {
 			if _, ok := r.(DatagramIteratorEOF); ok {
-				m.Terminate(errors.New("MDNetworkParticipant received a truncated datagram."))
+				m.Terminate(errors.New("MDNetworkParticipant received a truncated datagram"))
 			} else {
 				m.Terminate(r.(error))
 			}

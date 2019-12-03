@@ -22,7 +22,8 @@ type ServerConfig struct {
 		Anonymous string
 	}
 	MessageDirector struct {
-		Bind string
+		Bind    string
+		Connect string
 	}
 }
 

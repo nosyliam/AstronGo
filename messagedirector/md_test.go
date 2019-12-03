@@ -59,7 +59,10 @@ func createClient(p net.DatagramHandler) (client *net.Client, err error) {
 }
 
 func init() {
-	core.Config = &core.ServerConfig{MessageDirector: struct{ Bind string }{Bind: "127.0.0.1:7199"}}
+	core.Config = &core.ServerConfig{MessageDirector: struct {
+		Bind    string
+		Connect string
+	}{Bind: "127.0.0.1:7199", Connect: ""}}
 	msgQueue = make(chan Datagram)
 	msgQueue2 = make(chan Datagram)
 }
