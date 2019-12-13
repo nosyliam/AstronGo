@@ -15,7 +15,7 @@ type FakeServer struct {
 	Server
 }
 
-func (s FakeServer) handleConnect(conn net.Conn) {
+func (s FakeServer) HandleConnect(conn net.Conn) {
 	buf, err := ioutil.ReadAll(conn)
 	if err != nil {
 		msgChan <- ""

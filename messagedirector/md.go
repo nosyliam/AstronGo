@@ -11,10 +11,10 @@ import (
 	"os/signal"
 )
 
-const QUEUE_MAX = 128
+// Maximum number of datagrams that can be added to the MD queue.
+const QUEUE_MAX = 1024
 
 var MDLog *log.Entry
-
 var MD *MessageDirector
 
 type MessageDirector struct {
@@ -33,6 +33,9 @@ type MessageDirector struct {
 		md MDParticipant
 	}
 
+	// If an MD is configurated to be upstream, it will connect to the downstream MD and route channelmap
+	// events through it. Clients subscribing to channels that reside in other parts of the network will
+	// receive updates for them through the downstream MD.
 	upstream *MDUpstream
 }
 
@@ -84,6 +87,7 @@ func (m *MessageDirector) queueLoop() {
 		select {
 		case obj := <-MD.Queue:
 			go func() {
+				// We are running in a goroutine so that our main read loop will not crash if a datagram EOF is thrown.
 				defer func() {
 					if r := recover(); r != nil {
 						if _, ok := r.(DatagramIteratorEOF); ok {
@@ -93,6 +97,7 @@ func (m *MessageDirector) queueLoop() {
 					}
 				}()
 
+				// Iterate the datagram for receivers
 				var receivers []Channel_t
 				dgi := NewDatagramIterator(&obj.dg)
 				chanCount := dgi.ReadUint8()
@@ -100,13 +105,19 @@ func (m *MessageDirector) queueLoop() {
 					receivers = append(receivers, dgi.ReadChannel())
 				}
 
+				// Copy the datagram and seek to it's payload
 				seekDg := NewDatagram()
 				seekDg.Write(obj.dg.Bytes())
 				seekDg.Next(int(dgi.Tell()))
 
-				// Send out datagram to every receiver
+				// Send payload datagram to every available receiver
 				for _, recv := range receivers {
 					channelMap.Channel(recv) <- seekDg
+				}
+
+				// Send message upstream if necessary
+				if obj.md != nil && m.upstream != nil {
+					m.upstream.HandleDatagram(seekDg, nil)
 				}
 				finish <- true
 			}()
@@ -117,15 +128,52 @@ func (m *MessageDirector) queueLoop() {
 	}
 }
 
+// AddChannel and similar functions subscribe an upstream MD to events that may occur downstream regarding
+// objects that exist in the upstream's channel map.
+func (m *MessageDirector) AddChannel(ch Channel_t) {
+	if m.upstream != nil {
+		m.upstream.SubscribeChannel(ch)
+	}
+}
+
+func (m *MessageDirector) RemoveChannel(ch Channel_t) {
+	if m.upstream != nil {
+		m.upstream.UnsubscribeChannel(ch)
+	}
+}
+
+func (m *MessageDirector) AddRange(lo Channel_t, hi Channel_t) {
+	if m.upstream != nil {
+		m.upstream.SubscribeRange(lo, hi)
+	}
+}
+
+func (m *MessageDirector) RemoveRange(lo Channel_t, hi Channel_t) {
+	if m.upstream != nil {
+		m.upstream.UnsubscribeRange(lo, hi)
+	}
+}
+
 func (m *MessageDirector) HandleConnect(conn gonet.Conn) {
 	MDLog.Infof("Incoming connection from %s", conn.RemoteAddr())
 	NewMDParticipant(conn)
 }
 
 func (m *MessageDirector) PreroutePostRemove(sender Channel_t, dg Datagram) {
-	// TODO
+	if m.upstream != nil {
+		dg := NewDatagram()
+		dg.AddControlHeader(CONTROL_ADD_POST_REMOVE)
+		dg.AddChannel(sender)
+		dg.AddBlob(&dg)
+		m.upstream.HandleDatagram(dg, nil)
+	}
 }
 
 func (m *MessageDirector) RecallPostRemoves(sender Channel_t) {
-	// TODO
+	if m.upstream != nil {
+		dg := NewDatagram()
+		dg.AddControlHeader(CONTROL_CLEAR_POST_REMOVES)
+		dg.AddChannel(sender)
+		m.upstream.HandleDatagram(dg, nil)
+	}
 }

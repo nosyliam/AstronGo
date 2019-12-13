@@ -30,6 +30,19 @@ func (m *MDParticipantFake2) HandleDatagram(datagram Datagram, dgi *DatagramIter
 
 func (m *MDParticipantFake2) Terminate(error) {}
 
+func testSubscribeRoutine(ch Channel_t, t *testing.T) {
+	timeoutWrapper(
+		func() {
+			t.Fatal("control subscribe timeout")
+		},
+		func() bool {
+			if _, ok := channelMap.subscriptions.Load(ch); ok {
+				return true
+			}
+			return false
+		})
+}
+
 func timeoutWrapper(timeout func(), tick func() bool) {
 	timeoutChan := time.After(2 * time.Second)
 	tickChan := time.Tick(1 * time.Millisecond)
@@ -47,8 +60,8 @@ func timeoutWrapper(timeout func(), tick func() bool) {
 	}
 }
 
-func createClient(p net.DatagramHandler) (client *net.Client, err error) {
-	conn, err := gonet.Dial("tcp", ":7199")
+func createClient(p net.DatagramHandler, addr string) (client *net.Client, err error) {
+	conn, err := gonet.Dial("tcp", addr)
 	if err != nil {
 		return nil, err
 	}
@@ -59,19 +72,20 @@ func createClient(p net.DatagramHandler) (client *net.Client, err error) {
 }
 
 func init() {
-	core.Config = &core.ServerConfig{MessageDirector: struct {
-		Bind    string
-		Connect string
-	}{Bind: "127.0.0.1:7199", Connect: ""}}
 	msgQueue = make(chan Datagram)
 	msgQueue2 = make(chan Datagram)
 }
 
 func TestMD_Start(t *testing.T) {
+	core.Config = &core.ServerConfig{MessageDirector: struct {
+		Bind    string
+		Connect string
+	}{Bind: "127.0.0.1:7199", Connect: ""}}
+
 	go Start()
 	fakeParticipant = &MDParticipantFake{}
 
-	if client1, err := createClient(fakeParticipant); err != nil {
+	if client1, err := createClient(fakeParticipant, ":7199"); err != nil {
 		t.Fatal(err)
 	} else {
 		client = client1
@@ -121,16 +135,7 @@ func TestMD_ControlSubscribe(t *testing.T) {
 	dg.AddChannel(50)
 	client.SendDatagram(dg)
 
-	timeoutWrapper(
-		func() {
-			t.Fatal("control subscribe timeout")
-		},
-		func() bool {
-			if _, ok := channelMap.subscriptions.Load(Channel_t(50)); ok {
-				return true
-			}
-			return false
-		})
+	testSubscribeRoutine(Channel_t(50), t)
 }
 
 func TestMD_MessageRoute(t *testing.T) {
@@ -206,13 +211,26 @@ func TestMD_ControlUnsubscribeRange(t *testing.T) {
 }
 
 func TestMD_PostRemove(t *testing.T) {
+	var recvDg *Datagram
 	fakeParticipant2 = &MDParticipantFake2{}
 
-	if client, err := createClient(fakeParticipant2); err != nil {
-		t.Fatal(err)
-	} else {
-		client2 = client
-	}
+	go func() {
+		if client, err := createClient(fakeParticipant2, ":7199"); err != nil {
+			t.Fatal(err)
+		} else {
+			client2 = client
+		}
+	}()
+	timeoutWrapper(
+		func() {
+			t.Fatal("control multiple client connect timeout")
+		},
+		func() bool {
+			if client2 != nil {
+				return true
+			}
+			return false
+		})
 
 	time.Sleep(200 * time.Millisecond)
 
@@ -235,7 +253,20 @@ func TestMD_PostRemove(t *testing.T) {
 	time.Sleep(10 * time.Millisecond)
 	client.Close()
 	time.Sleep(10 * time.Millisecond)
-	dg = <-msgQueue2
+	go func() {
+		dg = <-msgQueue2
+		recvDg = &dg
+	}()
+	timeoutWrapper(
+		func() {
+			t.Fatal("post-remove timeout")
+		},
+		func() bool {
+			if recvDg != nil {
+				return true
+			}
+			return false
+		})
 	dgi := NewDatagramIterator(&dg)
 	dgi.ReadChannel() // Sender
 	dgi.ReadUint16()  // Message type

@@ -89,6 +89,7 @@ func addRange(slice []Range, r Range) []Range {
 func (r *RangeMap) Add(rng Range, sub *Subscriber) {
 	lock.Lock()
 	r.add(rng, sub)
+	MD.AddRange(rng.min, rng.max)
 	lock.Unlock()
 }
 
@@ -183,6 +184,7 @@ func (r *RangeMap) removeIntervalSub(int Range, p *Subscriber) {
 func (r *RangeMap) Remove(rng Range, sub *Subscriber) {
 	lock.Lock()
 	r.remove(rng, sub)
+	MD.RemoveRange(rng.min, rng.max)
 	lock.Unlock()
 }
 
@@ -266,7 +268,7 @@ type Subscriber struct {
 }
 
 type ChannelMap struct {
-	// Subscriptions map channels to a chan which accepts datagram or Subscriber objects
+	// Subscriptions map channels to go channels which accepts datagram or Subscriber objects
 	subscriptions sync.Map
 
 	// Ranges points to a RangeMap singularity
@@ -327,6 +329,7 @@ func (c *ChannelMap) UnsubscribeChannel(p *Subscriber, ch Channel_t) {
 			}
 		}
 		p.channels = p.channels[:idx]
+		MD.RemoveChannel(ch)
 	} else {
 		c.ranges.Remove(Range{ch, ch}, p)
 	}
@@ -373,13 +376,14 @@ func (c *ChannelMap) Channel(ch Channel_t) chan interface{} {
 
 }
 
-// channelRoutine implements a goroutine which continually reads a given chan for datagrams or subscriber objects.
-//  When given a datagram, it assumes the channel associated with the routine is a receiver and will route the
-//  the datagram to all of it's subscribers. When given a subscriber, it will append the object to it's subscribers
+// channelRoutine implements a goroutine which continually reads a given chan for datagram or subscriber objects.
+//  When given a datagram, it uses channel associated with the routine is a receiver and will route the
+//  the datagram to all of its subscribers. When given a subscriber, it will append the object to its subscribers
 //  list; however, if the subscriber is inactive (denoted by subscriber.active) it assumes that a removal operation
-//  operation is taking place and will attempt to a remove the subscriber from its subscribers list.
+//  operation is taking place and will attempt to remove it from the subscribers list.
 func channelRoutine(buf chan interface{}, ch Channel_t) {
 	var subscribers []*Subscriber
+	MD.AddChannel(ch)
 	for {
 		select {
 		case v, ok := <-buf:
@@ -403,6 +407,7 @@ func channelRoutine(buf chan interface{}, ch Channel_t) {
 					// Close dead channel
 					if len(subscribers) == 0 {
 						channelMap.subscriptions.Delete(ch)
+						MD.RemoveChannel(ch)
 						return
 					}
 				}
