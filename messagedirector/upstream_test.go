@@ -4,6 +4,9 @@ import (
 	"astrongo/core"
 	"astrongo/net"
 	. "astrongo/util"
+	"encoding/hex"
+	"fmt"
+	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	gonet "net"
 	"testing"
@@ -68,6 +71,8 @@ func TestMDUpstream_Start(t *testing.T) {
 }
 
 func TestMDUpstream_ReceiveDatagram(t *testing.T) {
+	socket := net.NewSocketTransport(dsConn, 0)
+
 	// Client subscribe to channel 1000
 	dg := NewDatagram()
 	dg.AddControlHeader(CONTROL_ADD_CHANNEL)
@@ -77,16 +82,27 @@ func TestMDUpstream_ReceiveDatagram(t *testing.T) {
 
 	// Downstream sends update to channel 100
 	dg = NewDatagram()
-	dg.AddServerHeader(1000, 0, 0)
+	dg.AddServerHeader(1000, 0, 100)
 	dg.AddUint32(0xDEADBEEF)
-	if _, err := dsConn.Write(dg.Bytes()); err != nil {
+	// Create a datagram with a size header. too lazy to manually calculate it.
+	dgs := NewDatagram()
+	dgs.AddSize(Dgsize_t(dg.Len()))
+	dgs.Write(dg.Bytes())
+	if _, err := socket.WriteDatagram(dgs); err != nil {
 		t.Fatal(err)
 	}
+	<-socket.Flush()
 
-	/* Client receives update
+	// Client receives update
 	dg = <-msgQueue
+	print("RECEIVED DATA:\n")
+	fmt.Printf("%s", hex.Dump(dg.Bytes()))
+	print("\n")
 	dgi := NewDatagramIterator(&dg)
-	require.Equal(t, 0xDEADBEEF, dgi.ReadUint32())*/
+	dgi.ReadUint32()
+	dgi.ReadUint32()
+	dgi.ReadUint16()
+	require.Equal(t, uint32(0xDEADBEEF), dgi.ReadUint32())
 }
 
 func init() {

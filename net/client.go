@@ -9,6 +9,8 @@ import (
 	"time"
 )
 
+const BUFF_SIZE = 128
+
 // DatagramHandler is an interface for which structures that can accept datagrams may
 //  implement to accept datagrams from a client, such as an MD participant.
 type DatagramHandler interface {
@@ -58,7 +60,7 @@ func (c *Client) defragment() {
 			}
 
 			c.Lock()
-			c.handler.ReceiveDatagram(dg)
+			go c.handler.ReceiveDatagram(dg)
 			c.Unlock()
 		} else {
 			break
@@ -76,7 +78,7 @@ func (c *Client) processInput(len int, data []byte) {
 			// We have enough data for a full datagram; send it off
 			dg := NewDatagram()
 			dg.Write(data[Dgsize:])
-			c.handler.ReceiveDatagram(dg)
+			go c.handler.ReceiveDatagram(dg)
 			c.Mutex.Unlock()
 			return
 		}
@@ -88,7 +90,7 @@ func (c *Client) processInput(len int, data []byte) {
 }
 
 func (c *Client) read() {
-	buff := make([]byte, 1024)
+	buff := make([]byte, BUFF_SIZE)
 	if n, err := c.tr.Read(buff); err == nil {
 		c.processInput(n, buff[0:n])
 		c.read()

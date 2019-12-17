@@ -62,7 +62,7 @@ func (m *MDUpstream) HandleDatagram(datagram Datagram, dgi *DatagramIterator) {
 }
 
 func (m *MDUpstream) ReceiveDatagram(datagram Datagram) {
-	panic("DG")
+	print("DG")
 	MD.Queue <- struct {
 		dg Datagram
 		md MDParticipant
@@ -71,5 +71,6 @@ func (m *MDUpstream) ReceiveDatagram(datagram Datagram) {
 
 func (m *MDUpstream) Terminate(err error) {
 	MDLog.Fatalf("Lost connection to upstream MD: %s", err)
+	m.client.Close()
 	os.Exit(0)
 }
