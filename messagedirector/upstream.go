@@ -62,7 +62,6 @@ func (m *MDUpstream) HandleDatagram(datagram Datagram, dgi *DatagramIterator) {
 }
 
 func (m *MDUpstream) ReceiveDatagram(datagram Datagram) {
-	print("DG")
 	MD.Queue <- struct {
 		dg Datagram
 		md MDParticipant

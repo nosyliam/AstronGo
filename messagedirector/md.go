@@ -4,7 +4,6 @@ import (
 	"astrongo/core"
 	"astrongo/net"
 	. "astrongo/util"
-	"encoding/hex"
 	"fmt"
 	"github.com/apex/log"
 	gonet "net"
@@ -110,10 +109,6 @@ func (m *MessageDirector) queueLoop() {
 				seekDg := NewDatagram()
 				seekDg.Write(obj.dg.Bytes())
 				seekDg.Next(int(dgi.Tell()))
-
-				print("MD ROUTING DATA: \n")
-				fmt.Printf("%s", hex.Dump(seekDg.Bytes()))
-				print("\n")
 
 				// Send payload datagram to every available receiver
 				for _, recv := range receivers {

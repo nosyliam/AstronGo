@@ -77,6 +77,8 @@ func init() {
 }
 
 func TestMD_Start(t *testing.T) {
+	channelMap = &ChannelMap{}
+	channelMap.init()
 	core.Config = &core.ServerConfig{MessageDirector: struct {
 		Bind    string
 		Connect string
@@ -184,7 +186,7 @@ func TestMD_ControlSubscribeRange(t *testing.T) {
 	time.Sleep(50 * time.Millisecond)
 
 	dg = NewDatagram()
-	dg.AddServerHeader(1500, 60, 1337)
+	dg.AddServerHeader(1500, 70, 1337)
 	MD.Queue <- struct {
 		dg Datagram
 		md MDParticipant
@@ -199,9 +201,20 @@ func TestMD_ControlUnsubscribeRange(t *testing.T) {
 	dg.AddChannel(1400)
 	dg.AddChannel(1600)
 	client.SendDatagram(dg)
+	timeoutWrapper(
+		func() {
+			t.Fatal("control unsubscribe range timeout")
+		},
+		func() bool {
+			// Channelmap should splice two (three, in practice) new ranges
+			if len(channelMap.ranges.intervals) > 1 {
+				return true
+			}
+			return false
+		})
 
 	dg = NewDatagram()
-	dg.AddServerHeader(1500, 60, 1337)
+	dg.AddServerHeader(1500, 80, 1337)
 	MD.Queue <- struct {
 		dg Datagram
 		md MDParticipant

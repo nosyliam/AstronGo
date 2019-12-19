@@ -4,11 +4,10 @@ import (
 	"astrongo/core"
 	"astrongo/net"
 	. "astrongo/util"
-	"encoding/hex"
-	"fmt"
 	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	gonet "net"
+	"src/github.com/tj/assert"
 	"testing"
 )
 
@@ -91,17 +90,15 @@ func TestMDUpstream_ReceiveDatagram(t *testing.T) {
 	if _, err := socket.WriteDatagram(dgs); err != nil {
 		t.Fatal(err)
 	}
+	assert.Empty(t, msgQueue)
 	<-socket.Flush()
 
 	// Client receives update
 	dg = <-msgQueue
-	print("RECEIVED DATA:\n")
-	fmt.Printf("%s", hex.Dump(dg.Bytes()))
-	print("\n")
 	dgi := NewDatagramIterator(&dg)
-	dgi.ReadUint32()
-	dgi.ReadUint32()
-	dgi.ReadUint16()
+	dgi.ReadUint32() // receiver
+	dgi.ReadUint32() // ???
+	dgi.ReadUint16() // msgtype
 	require.Equal(t, uint32(0xDEADBEEF), dgi.ReadUint32())
 }
 
