@@ -69,6 +69,10 @@ func TestMDUpstream_Start(t *testing.T) {
 		})
 }
 
+// This test does not accurately cover channelmap-related events like channel subscriptions; the
+//  downstream connection is not a real MD and does not process anything. Additionally, without
+//  a real downstream MD (which would require another process) the pre-routing and recall of
+//  post-removes cannot be tested.
 func TestMDUpstream_ReceiveDatagram(t *testing.T) {
 	socket := net.NewSocketTransport(dsConn, 0)
 
@@ -102,6 +106,7 @@ func TestMDUpstream_ReceiveDatagram(t *testing.T) {
 	require.Equal(t, uint32(0xDEADBEEF), dgi.ReadUint32())
 }
 
+// TODO: improve upstream testing coverage
 func init() {
 	msgQueue = make(chan Datagram)
 	downstream.Handler = FakeDownstream{}
