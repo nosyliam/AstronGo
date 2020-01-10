@@ -25,6 +25,10 @@ type ServerConfig struct {
 		Bind    string
 		Connect string
 	}
+	Eventlogger struct {
+		Bind   string
+		Output string `"`
+	}
 }
 
 func LoadConfig(path string, name string) (err error) {

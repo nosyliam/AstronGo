@@ -1,7 +1,7 @@
 package net
 
 import (
-	"astrongo/util"
+	. "astrongo/util"
 	"bufio"
 	"github.com/stretchr/testify/require"
 	"net"
@@ -11,17 +11,21 @@ import (
 
 type MDParticipantFake struct{}
 
-var queue = make(chan util.Datagram)
+var queue = make(chan Datagram)
 
-func (m *MDParticipantFake) RouteDatagram(datagram util.Datagram) {
+func (m *MDParticipantFake) RouteDatagram(datagram Datagram) {
 	queue <- datagram
 }
 
-func (m *MDParticipantFake) HandleDatagram(datagram util.Datagram) {
+func (m *MDParticipantFake) ReceiveDatagram(datagram Datagram) {
+
+}
+
+func (m *MDParticipantFake) HandleDatagram(datagram Datagram, dgi *DatagramIterator) {
 	queue <- datagram
 }
 
-func (m *MDParticipantFake) Terminate() {}
+func (m *MDParticipantFake) Terminate(err error) {}
 
 var participant *MDParticipantFake
 var netclient *Client
@@ -31,10 +35,10 @@ var sclient net.Conn
 var ssocket *socketTransport
 
 func TestClient_SendDatagram(t *testing.T) {
-	dg := util.NewDatagram()
+	dg := NewDatagram()
 	dg.WriteString("hello")
 
-	go netclient.sendDatagram(dg)
+	go netclient.SendDatagram(dg)
 	reader := bufio.NewReaderSize(sserver, socketBuffSize)
 	buff := make([]byte, 9)
 	_, err := reader.Read(buff)
@@ -46,7 +50,7 @@ func TestClient_SendDatagram(t *testing.T) {
 }
 
 func TestClient_Read(t *testing.T) {
-	dg := util.NewDatagram()
+	dg := NewDatagram()
 	dg.AddInt32(5)
 	dg.WriteString("hello")
 
@@ -63,10 +67,10 @@ func TestClient_Read(t *testing.T) {
 }
 
 func TestClient_Defragment(t *testing.T) {
-	dg1 := util.NewDatagram()
+	dg1 := NewDatagram()
 	dg1.AddInt32(10)
 	dg1.WriteString("hello ")
-	dg2 := util.NewDatagram()
+	dg2 := NewDatagram()
 	dg2.WriteString("world")
 
 	writer := bufio.NewWriterSize(sserver, socketBuffSize)

@@ -110,6 +110,7 @@ Revision: INDEV`)
 	hasher := dc.NewHashGenerator()
 	core.DC.GenerateHash(hasher)
 	mainLog.Info(fmt.Sprintf("DC hash: 0x%x", hasher.Hash()))
+	core.StartEventLogger()
 	messagedirector.Start()
 
 	c := make(chan os.Signal)
