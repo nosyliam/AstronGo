@@ -3,6 +3,7 @@ package main
 import (
 	"astrongo/core"
 	"astrongo/dclass/dc"
+	"astrongo/eventlogger"
 	"astrongo/messagedirector"
 	"fmt"
 	"github.com/apex/log"
@@ -110,7 +111,7 @@ Revision: INDEV`)
 	hasher := dc.NewHashGenerator()
 	core.DC.GenerateHash(hasher)
 	mainLog.Info(fmt.Sprintf("DC hash: 0x%x", hasher.Hash()))
-	core.StartEventLogger()
+	eventlogger.StartEventLogger()
 	messagedirector.Start()
 
 	c := make(chan os.Signal)
