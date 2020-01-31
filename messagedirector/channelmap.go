@@ -13,6 +13,10 @@ type Range struct {
 	max Channel_t
 }
 
+func (r Range) Size() Channel_t {
+	return r.max - r.min
+}
+
 type RangeMap struct {
 	subscribers  []*Subscriber
 	intervals    map[Range][]*Subscriber

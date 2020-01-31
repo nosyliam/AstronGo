@@ -129,5 +129,7 @@ func (c *Client) Close() {
 }
 
 func (c *Client) disconnect(err error) {
+	c.Mutex.Lock()
+	defer c.Mutex.Unlock()
 	c.handler.Terminate(err)
 }

@@ -10,8 +10,6 @@ import (
 	"time"
 )
 
-const socketBuffSize = 4096
-
 type socketTransport struct {
 	conn      net.Conn
 	rw        io.ReadWriter
@@ -21,12 +19,12 @@ type socketTransport struct {
 }
 
 // NewSocketTransport creates a socket class stream transport.
-func NewSocketTransport(conn net.Conn, keepAlive time.Duration) Transport {
+func NewSocketTransport(conn net.Conn, keepAlive time.Duration, buffSize int) Transport {
 	s := &socketTransport{
 		conn:      conn,
 		rw:        conn,
-		br:        bufio.NewReaderSize(conn, socketBuffSize),
-		bw:        bufio.NewWriterSize(conn, socketBuffSize),
+		br:        bufio.NewReaderSize(conn, buffSize),
+		bw:        bufio.NewWriterSize(conn, buffSize),
 		keepAlive: keepAlive,
 	}
 	return s

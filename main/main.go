@@ -1,6 +1,7 @@
 package main
 
 import (
+	"astrongo/clientagent"
 	"astrongo/core"
 	"astrongo/dclass/dc"
 	"astrongo/eventlogger"
@@ -110,9 +111,18 @@ Revision: INDEV`)
 
 	hasher := dc.NewHashGenerator()
 	core.DC.GenerateHash(hasher)
+	core.Hash = hasher.Hash()
 	mainLog.Info(fmt.Sprintf("DC hash: 0x%x", hasher.Hash()))
 	eventlogger.StartEventLogger()
 	messagedirector.Start()
+
+	// Instantiate roles
+	for _, role := range core.Config.Roles {
+		switch role.Type {
+		case "clientagent":
+			clientagent.NewClientAgent(role)
+		}
+	}
 
 	c := make(chan os.Signal)
 	signal.Notify(c, os.Interrupt)

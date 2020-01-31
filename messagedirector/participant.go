@@ -33,7 +33,7 @@ type MDParticipantBase struct {
 	url  string
 }
 
-func (m *MDParticipantBase) init() {
+func (m *MDParticipantBase) Init() {
 	m.postRemoves = make(map[Channel_t][]Datagram)
 	m.subscriber = &Subscriber{participant: m, active: true}
 	MD.participants = append(MD.participants, m)
@@ -109,8 +109,8 @@ type MDNetworkParticipant struct {
 
 func NewMDParticipant(conn gonet.Conn) *MDNetworkParticipant {
 	participant := &MDNetworkParticipant{conn: conn}
-	participant.MDParticipantBase.init()
-	socket := net.NewSocketTransport(conn, 60*time.Second)
+	participant.MDParticipantBase.Init()
+	socket := net.NewSocketTransport(conn, 60*time.Second, 4096)
 
 	participant.client = net.NewClient(socket, participant)
 	participant.subscriber = &Subscriber{participant: participant, active: true}

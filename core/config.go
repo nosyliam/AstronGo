@@ -7,6 +7,26 @@ import (
 )
 
 var Config *ServerConfig
+var Hash uint32
+
+type Role struct {
+	Type    string
+	Bind    string
+	Version string
+	Tuning  struct {
+		Interest_Timeout int
+	}
+	Client struct {
+		Add_Interest      string
+		Write_Buffer_Size int
+		Keepalive         int
+		Relocate          bool
+	}
+	Channels struct {
+		Min int
+		Max int
+	}
+}
 
 type ServerConfig struct {
 	Daemon struct {
@@ -29,6 +49,7 @@ type ServerConfig struct {
 		Bind   string
 		Output string `"`
 	}
+	Roles []Role
 }
 
 func LoadConfig(path string, name string) (err error) {
