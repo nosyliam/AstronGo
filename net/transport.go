@@ -16,4 +16,6 @@ type Transport interface {
 
 	// Flush writes any buffered data to the underlying io.Writer.
 	Flush() chan error
+
+	Closed() bool
 }

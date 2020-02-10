@@ -19,6 +19,7 @@ type Role struct {
 	Client struct {
 		Add_Interest      string
 		Write_Buffer_Size int
+		Heartbeat_Timeout int
 		Keepalive         int
 		Relocate          bool
 	}

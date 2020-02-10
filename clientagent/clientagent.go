@@ -83,3 +83,7 @@ func (c *ClientAgent) HandleConnect(conn gonet.Conn) {
 	c.log.Debugf("Incoming connection from %s", conn.RemoteAddr())
 	NewAstronClient(c.config, c, conn)
 }
+
+func (c *ClientAgent) Allocate() Channel_t {
+	return c.tracker.alloc()
+}

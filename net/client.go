@@ -131,5 +131,14 @@ func (c *Client) Close() {
 func (c *Client) disconnect(err error) {
 	c.Mutex.Lock()
 	defer c.Mutex.Unlock()
+	c.tr.Close()
 	c.handler.Terminate(err)
+}
+
+func (c *Client) Local() bool {
+	return true
+}
+
+func (c *Client) Connected() bool {
+	return !c.tr.Closed()
 }

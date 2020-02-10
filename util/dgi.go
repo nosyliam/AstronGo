@@ -29,7 +29,7 @@ func NewDatagramIterator(dg *Datagram) *DatagramIterator {
 
 func (dgi *DatagramIterator) panic(len int8) {
 	panic(DatagramIteratorEOF{
-		fmt.Sprintf("datagram iterator eof, Read length: %d buff length: %d", len, dgi.Read.Len()),
+		fmt.Sprintf("datagram iterator eof, read length: %d buff length: %d", len, dgi.Read.Len()),
 	})
 }
 

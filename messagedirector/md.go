@@ -91,7 +91,7 @@ func (m *MessageDirector) queueLoop() {
 				defer func() {
 					if r := recover(); r != nil {
 						if _, ok := r.(DatagramIteratorEOF); ok {
-							MDLog.Errorf("MD received truncated datagram header from participant %s", obj.md.Name())
+							// TODO
 						}
 						finish <- true
 					}

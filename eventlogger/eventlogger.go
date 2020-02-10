@@ -29,11 +29,11 @@ func NewLoggedEvent(tp string, sender string) LoggedEvent {
 	return le
 }
 
-func (l *LoggedEvent) add(key string, val string) {
+func (l LoggedEvent) Add(key string, val string) {
 	l.keys[key] = val
 }
 
-func (l *LoggedEvent) send() {
+func (l LoggedEvent) Send() {
 	msg, err := msgpack.Marshal(l.keys)
 	if err != nil {
 		EventLoggerLog.Warnf("failed to marshal %s event: %s", l.keys["type"], err)
@@ -65,8 +65,8 @@ func StartEventLogger() {
 	}
 
 	event := NewLoggedEvent("log-opened", "EventLogger")
-	event.add("msg", "Log opened upon Event Logger startup.")
-	event.send()
+	event.Add("msg", "Log opened upon Event Logger startup.")
+	event.Send()
 
 	handleInterrupts()
 	go listen()

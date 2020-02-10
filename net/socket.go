@@ -16,6 +16,7 @@ type socketTransport struct {
 	br        *bufio.Reader
 	bw        *bufio.Writer
 	keepAlive time.Duration
+	closed    bool
 }
 
 // NewSocketTransport creates a socket class stream transport.
@@ -47,7 +48,12 @@ func (s *socketTransport) WriteDatagram(datagram util.Datagram) (n int, err erro
 }
 
 func (s *socketTransport) Close() error {
+	s.closed = true
 	return s.conn.Close()
+}
+
+func (s *socketTransport) Closed() bool {
+	return s.closed
 }
 
 // Flush writes any buffered data to the underlying io.Writer.
