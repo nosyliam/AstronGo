@@ -66,7 +66,7 @@ func createClient(p net.DatagramHandler, addr string) (client *net.Client, err e
 		return nil, err
 	}
 
-	socket := net.NewSocketTransport(conn, time.Second*60)
+	socket := net.NewSocketTransport(conn, time.Second*60, 4096)
 	client = net.NewClient(socket, p)
 	return client, nil
 }

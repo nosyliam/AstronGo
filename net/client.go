@@ -125,6 +125,8 @@ func (c *Client) SendDatagram(datagram Datagram) {
 }
 
 func (c *Client) Close() {
+	c.Mutex.Lock()
+	defer c.Mutex.Unlock()
 	c.tr.Close()
 }
 
