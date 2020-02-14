@@ -22,7 +22,7 @@ func NewMDUpstream(md *MessageDirector, address string) *MDUpstream {
 		MDLog.Fatalf("upstream failed to connect: %s", err)
 		return nil
 	}
-	socket := net.NewSocketTransport(conn, 0)
+	socket := net.NewSocketTransport(conn, 0, 4096)
 	up.client = net.NewClient(socket, up)
 	return up
 }

@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-const BUFF_SIZE = 128
+const BUFF_SIZE = 4096
 
 // DatagramHandler is an interface for which structures that can accept datagrams may
 //  implement to accept datagrams from a client, such as an MD participant.

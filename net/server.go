@@ -69,3 +69,7 @@ func (s *NetworkServer) handleInterrupts() {
 		s.Shutdown()
 	}()
 }
+
+func (s *NetworkServer) Listening() uint32 {
+	return atomic.LoadUint32(&s.listening)
+}

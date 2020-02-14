@@ -9,12 +9,12 @@ var lock sync.Mutex
 var channelMap *ChannelMap
 
 type Range struct {
-	min Channel_t
-	max Channel_t
+	Min Channel_t
+	Max Channel_t
 }
 
 func (r Range) Size() Channel_t {
-	return r.max - r.min
+	return r.Max - r.Min
 }
 
 type RangeMap struct {
@@ -93,7 +93,7 @@ func addRange(slice []Range, r Range) []Range {
 func (r *RangeMap) Add(rng Range, sub *Subscriber) {
 	lock.Lock()
 	r.add(rng, sub)
-	MD.AddRange(rng.min, rng.max)
+	MD.AddRange(rng.Min, rng.Max)
 	lock.Unlock()
 }
 
@@ -104,50 +104,50 @@ func (r *RangeMap) add(rng Range, sub *Subscriber) {
 		}
 
 		// {xxxxxx[========]xxxxxxxx}
-		if erng.min > rng.min && erng.max < rng.max {
+		if erng.Min > rng.Min && erng.Max < rng.Max {
 			r.intervals[erng] = addSub(r.intervals[erng], sub)
 			r.intervalSubs[sub] = addRange(r.intervalSubs[sub], erng)
-			r.add(Range{rng.min, erng.min - 1}, sub)
-			r.add(Range{erng.max + 1, rng.max}, sub)
+			r.add(Range{rng.Min, erng.Min - 1}, sub)
+			r.add(Range{erng.Max + 1, rng.Max}, sub)
 			return
 		}
 
 		// [======{xxxxxxxx}========]
-		if erng.min < rng.min && erng.max > rng.max {
-			rng1 := r.Split(erng, erng.max, rng.min-1, erng.min, true)
-			rng2 := r.Split(rng1, rng1.max, rng.max, rng1.min, false)
+		if erng.Min < rng.Min && erng.Max > rng.Max {
+			rng1 := r.Split(erng, erng.Max, rng.Min-1, erng.Min, true)
+			rng2 := r.Split(rng1, rng1.Max, rng.Max, rng1.Min, false)
 			r.intervals[rng2] = addSub(r.intervals[rng2], sub)
 			r.intervalSubs[sub] = addRange(r.intervalSubs[sub], rng2)
 			return
 		}
 
 		// [=============={xxxx]xxxx}
-		if rng.min >= erng.min && rng.min <= erng.max && rng.max > erng.max {
-			if rng.min == erng.min {
+		if rng.Min >= erng.Min && rng.Min <= erng.Max && rng.Max > erng.Max {
+			if rng.Min == erng.Min {
 				r.intervals[erng] = addSub(r.intervals[erng], sub)
 				r.intervalSubs[sub] = addRange(r.intervalSubs[sub], erng)
-				r.add(Range{erng.max + 1, rng.max}, sub)
+				r.add(Range{erng.Max + 1, rng.Max}, sub)
 				return
 			}
-			nrng := r.Split(erng, erng.max, rng.min-1, erng.min, true)
+			nrng := r.Split(erng, erng.Max, rng.Min-1, erng.Min, true)
 			r.intervals[nrng] = addSub(r.intervals[nrng], sub)
 			r.intervalSubs[sub] = addRange(r.intervalSubs[sub], nrng)
-			r.add(Range{erng.max + 1, rng.max}, sub)
+			r.add(Range{erng.Max + 1, rng.Max}, sub)
 			return
 		}
 
 		// {xxxx[xxxx}==============]
-		if rng.max >= erng.min && rng.max <= erng.max && rng.min < erng.min {
-			if rng.max == erng.max {
+		if rng.Max >= erng.Min && rng.Max <= erng.Max && rng.Min < erng.Min {
+			if rng.Max == erng.Max {
 				r.intervals[erng] = addSub(r.intervals[erng], sub)
 				r.intervalSubs[sub] = addRange(r.intervalSubs[sub], erng)
-				r.add(Range{rng.min, erng.min - 1}, sub)
+				r.add(Range{rng.Min, erng.Min - 1}, sub)
 				return
 			}
-			nrng := r.Split(erng, erng.max, rng.max, erng.min, false)
+			nrng := r.Split(erng, erng.Max, rng.Max, erng.Min, false)
 			r.intervals[nrng] = addSub(r.intervals[nrng], sub)
 			r.intervalSubs[sub] = addRange(r.intervalSubs[sub], nrng)
-			r.add(Range{rng.min, erng.min - 1}, sub)
+			r.add(Range{rng.Min, erng.Min - 1}, sub)
 			return
 		}
 	}
@@ -188,60 +188,60 @@ func (r *RangeMap) removeIntervalSub(int Range, p *Subscriber) {
 func (r *RangeMap) Remove(rng Range, sub *Subscriber) {
 	lock.Lock()
 	r.remove(rng, sub)
-	MD.RemoveRange(rng.min, rng.max)
+	MD.RemoveRange(rng.Min, rng.Max)
 	lock.Unlock()
 }
 
 func (r *RangeMap) remove(rng Range, sub *Subscriber) {
 	for erng, _ := range r.intervals {
 		// {xxxxxx[========]xxxxxxxx}
-		if erng.min >= rng.min && erng.max <= rng.max {
+		if erng.Min >= rng.Min && erng.Max <= rng.Max {
 			r.removeSubInterval(sub, erng)
 			r.removeIntervalSub(erng, sub)
 			if erng == rng {
 				return
 			}
-			r.remove(Range{rng.min, erng.min - 1}, sub)
-			r.remove(Range{erng.max + 1, rng.max}, sub)
+			r.remove(Range{rng.Min, erng.Min - 1}, sub)
+			r.remove(Range{erng.Max + 1, rng.Max}, sub)
 			return
 		}
 
 		// [======{xxxxxxxx}========]
-		if erng.min < rng.min && erng.max > rng.max {
-			rng1 := r.Split(erng, erng.max, rng.min-1, erng.min, true)
-			rng2 := r.Split(rng1, rng1.max, rng.max, rng1.min, false)
+		if erng.Min < rng.Min && erng.Max > rng.Max {
+			rng1 := r.Split(erng, erng.Max, rng.Min-1, erng.Min, true)
+			rng2 := r.Split(rng1, rng1.Max, rng.Max, rng1.Min, false)
 			r.removeSubInterval(sub, rng2)
 			r.removeIntervalSub(rng2, sub)
 			return
 		}
 
 		// [=============={xxxx]xxxx}
-		if rng.min >= erng.min && rng.min <= erng.max && rng.max > erng.max {
-			if rng.min == erng.min {
+		if rng.Min >= erng.Min && rng.Min <= erng.Max && rng.Max > erng.Max {
+			if rng.Min == erng.Min {
 				r.removeSubInterval(sub, erng)
 				r.removeIntervalSub(erng, sub)
-				r.remove(Range{erng.max + 1, rng.max}, sub)
+				r.remove(Range{erng.Max + 1, rng.Max}, sub)
 				return
 			}
-			nrng := r.Split(erng, erng.max, rng.min-1, erng.min, true)
+			nrng := r.Split(erng, erng.Max, rng.Min-1, erng.Min, true)
 			r.removeSubInterval(sub, nrng)
 			r.removeIntervalSub(nrng, sub)
-			r.remove(Range{erng.max + 1, rng.max}, sub)
+			r.remove(Range{erng.Max + 1, rng.Max}, sub)
 			return
 		}
 
 		// {xxxx[xxxx}==============]
-		if rng.max >= erng.min && rng.max <= erng.max && rng.min < erng.min {
-			if rng.max == erng.max {
+		if rng.Max >= erng.Min && rng.Max <= erng.Max && rng.Min < erng.Min {
+			if rng.Max == erng.Max {
 				r.removeSubInterval(sub, erng)
 				r.removeIntervalSub(erng, sub)
-				r.remove(Range{rng.min, erng.min - 1}, sub)
+				r.remove(Range{rng.Min, erng.Min - 1}, sub)
 				return
 			}
-			nrng := r.Split(erng, erng.max, rng.max, erng.min, false)
+			nrng := r.Split(erng, erng.Max, rng.Max, erng.Min, false)
 			r.removeSubInterval(sub, nrng)
 			r.removeIntervalSub(nrng, sub)
-			r.remove(Range{rng.min, erng.min - 1}, sub)
+			r.remove(Range{rng.Min, erng.Min - 1}, sub)
 			return
 		}
 	}
@@ -252,7 +252,7 @@ func (r *RangeMap) Send(ch Channel_t, dg Datagram) {
 	defer lock.Unlock()
 
 	for rng, subs := range r.intervals {
-		if rng.min <= ch && rng.max >= ch {
+		if rng.Min <= ch && rng.Max >= ch {
 			for _, sub := range subs {
 				go sub.participant.HandleDatagram(dg, NewDatagramIterator(&dg))
 			}
@@ -287,7 +287,7 @@ func (s *Subscriber) Subscribed(ch Channel_t) bool {
 	}
 
 	for _, rng := range s.ranges {
-		if rng.min <= ch && rng.max >= ch {
+		if rng.Min <= ch && rng.Max >= ch {
 			return true
 		}
 	}
@@ -302,7 +302,7 @@ func (c *ChannelMap) init() {
 func (c *ChannelMap) SubscribeRange(p *Subscriber, rng Range) {
 	// Remove single-channel subscriptions; we can't risk data being sent twice
 	for _, ch := range p.channels {
-		if rng.min <= ch && rng.max >= ch {
+		if rng.Min <= ch && rng.Max >= ch {
 			c.UnsubscribeChannel(p, ch)
 		}
 	}

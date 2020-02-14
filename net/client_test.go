@@ -11,6 +11,8 @@ import (
 
 type MDParticipantFake struct{}
 
+var socketBuffSize = 4096
+
 var queue = make(chan Datagram)
 
 func (m *MDParticipantFake) RouteDatagram(datagram Datagram) {

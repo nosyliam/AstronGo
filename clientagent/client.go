@@ -48,3 +48,7 @@ func (c *Client) init(config core.Role, ca *ClientAgent) *Client {
 func (c *Client) sendDisconnect(reason uint16, error string, security bool) {
 
 }
+
+func (c *Client) annihilate() {
+	c.ca.Tracker.free(c.channel)
+}

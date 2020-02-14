@@ -113,6 +113,7 @@ func (a *AstronClient) receiveDisconnect(err error) {
 	}
 
 	a.heartbeat.Stop()
+	a.annihilate()
 }
 
 func (a *AstronClient) forwardDatagram(dg Datagram) {
