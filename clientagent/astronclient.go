@@ -135,6 +135,7 @@ func (a *AstronClient) ReceiveDatagram(dg Datagram) {
 		defer func() {
 			if r := recover(); r != nil {
 				if _, ok := r.(DatagramIteratorEOF); ok {
+					a.sendDisconnect(CLIENT_DISCONNECT_TRUNCATED_DATAGRAM, "Datagram unexpectedly ended while iterating.", false)
 				}
 				finish <- true
 			}

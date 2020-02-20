@@ -10,7 +10,9 @@ var Config *ServerConfig
 var Hash uint32
 
 type Role struct {
-	Type    string
+	Type string
+
+	// CLIENT
 	Bind    string
 	Version string
 	Tuning  struct {
@@ -27,6 +29,9 @@ type Role struct {
 		Min int
 		Max int
 	}
+
+	// STATESERVER
+	Control int
 }
 
 type ServerConfig struct {
