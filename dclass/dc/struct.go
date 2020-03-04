@@ -28,16 +28,16 @@ func NewStruct(name string, file *File) *Struct {
 	return s
 }
 
-func (s Struct) GetFieldByName(name string) (field *Field, ok bool) {
+func (s Struct) GetFieldByName(name string) (field Field, ok bool) {
 	if val, ok := s.fieldsByName[name]; ok {
-		return &val, true
+		return val, true
 	}
 	return nil, false
 }
 
-func (s Struct) GetFieldById(id uint) (field *Field, ok bool) {
+func (s Struct) GetFieldById(id uint) (field Field, ok bool) {
 	if val, ok := s.fieldsById[id]; ok {
-		return &val, true
+		return val, true
 	}
 	return nil, false
 }
@@ -91,6 +91,11 @@ func (s *Struct) AddField(field Field) (err error) {
 
 func (s *Struct) HasRange() bool {
 	return s.constrained
+}
+
+// Cannot be named Id; collides with the Field interface's Id function in MolecularField
+func (s *Struct) ClassId() uint {
+	return s.id
 }
 
 func (s *Struct) GenerateHash(generator *HashGenerator) {

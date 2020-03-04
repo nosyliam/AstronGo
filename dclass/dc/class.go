@@ -123,6 +123,10 @@ func (c *Class) HasRange() bool {
 	return c.constrained
 }
 
+func (c *Class) Name() string {
+	return c.name
+}
+
 func (c *Class) GenerateHash(generator *HashGenerator) {
 	generator.AddString(c.name)
 

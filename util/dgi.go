@@ -235,6 +235,12 @@ func (dgi *DatagramIterator) ReadRemainder() []uint8 {
 	return dgi.ReadData(sz)
 }
 
+func (dgi *DatagramIterator) UnpackFieldtoUint8(field dc.Field) []uint8 {
+	b := &bytes.Buffer{}
+	dgi.UnpackField(field, b)
+	return b.Bytes()
+}
+
 // Shorthand for unpackDtype
 func (dgi *DatagramIterator) UnpackField(field dc.Field, buffer *bytes.Buffer) {
 	dgi.UnpackDtype(field.FieldType(), buffer)
