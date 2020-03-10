@@ -86,7 +86,7 @@ func (m *MDParticipantBase) Name() string {
 	return m.name
 }
 
-func (m *MDParticipantBase) terminate() {
+func (m *MDParticipantBase) Cleanup() {
 	m.PostRemove()
 	channelMap.UnsubscribeAll(m.subscriber)
 
@@ -155,7 +155,8 @@ func (m *MDNetworkParticipant) ReceiveDatagram(dg Datagram) {
 		case CONTROL_SET_CON_URL:
 			m.url = dgi.ReadString()
 		case CONTROL_LOG_MESSAGE:
-			// TODO
+			// Our version of the eventlogger cannot log datagrams whatsoever, so this
+			//  feature is essentially deprecated.
 		default:
 			MDLog.Errorf("MDNetworkParticipant got unknown control message with message type: %d", msg)
 		}
@@ -168,5 +169,5 @@ func (m *MDNetworkParticipant) ReceiveDatagram(dg Datagram) {
 func (m *MDNetworkParticipant) Terminate(err error) {
 	MDLog.Infof("Lost connection from %s: %s", m.conn.RemoteAddr(), err.Error())
 	m.client.Close()
-	m.terminate()
+	m.Cleanup()
 }

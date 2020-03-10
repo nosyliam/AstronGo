@@ -39,7 +39,7 @@ func (d *Datagram) AddString(v string) {
 	d.Write([]byte(v))
 }
 
-func (d *Datagram) AddLocation(parent Doid_t, zone Doid_t) {
+func (d *Datagram) AddLocation(parent Doid_t, zone Zone_t) {
 	binary.Write(d, binary.LittleEndian, parent)
 	binary.Write(d, binary.LittleEndian, zone)
 }

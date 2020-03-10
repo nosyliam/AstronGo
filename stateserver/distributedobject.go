@@ -24,11 +24,12 @@ type DistributedObject struct {
 	requiredFields FieldValues
 	ramFields      FieldValues
 
-	aiChannel    Channel_t
-	ownerChannel Channel_t
-	explicitAi   bool
+	aiChannel          Channel_t
+	ownerChannel       Channel_t
+	explicitAi         bool
+	parentSynchronized bool
 
-	context     int
+	context     uint32
 	zoneObjects map[Zone_t][]Doid_t
 }
 
@@ -90,7 +91,7 @@ func NewDistributedObject(ss *StateServer, doid Doid_t, parent Doid_t,
 
 func (d *DistributedObject) appendRequiredData(dg Datagram, client bool, owner bool) {
 	dg.AddDoid(d.do)
-	dg.AddLocation(d.parent, Doid_t(d.zone))
+	dg.AddLocation(d.parent, d.zone)
 	dg.AddUint16(uint16(d.dclass.ClassId()))
 	count := d.dclass.GetNumFields()
 	for i := 0; i < int(count); i++ {
@@ -128,6 +129,208 @@ func (d *DistributedObject) appendOtherData(dg Datagram, client bool, owner bool
 			dg.AddData(data)
 		}
 	}
+}
+
+func (d *DistributedObject) sendInterestEntry(location Channel_t, context uint32) {
+	msgType := STATESERVER_OBJECT_ENTER_INTEREST_WITH_REQUIRED
+	if len(d.ramFields) != 0 {
+		msgType = STATESERVER_OBJECT_ENTER_INTEREST_WITH_REQUIRED_OTHER
+	}
+	dg := NewDatagram()
+	dg.AddServerHeader(location, Channel_t(d.do), uint16(msgType))
+	dg.AddUint32(context)
+	d.appendRequiredData(dg, true, false)
+	if len(d.ramFields) != 0 {
+		d.appendOtherData(dg, true, false)
+	}
+	d.RouteDatagram(dg)
+}
+
+func (d *DistributedObject) sendLocationEntry(location Channel_t) {
+	msgType := STATESERVER_OBJECT_ENTER_LOCATION_WITH_REQUIRED
+	if len(d.ramFields) != 0 {
+		msgType = STATESERVER_OBJECT_ENTER_LOCATION_WITH_REQUIRED_OTHER
+	}
+	dg := NewDatagram()
+	dg.AddServerHeader(location, Channel_t(d.do), uint16(msgType))
+	d.appendRequiredData(dg, true, false)
+	if len(d.ramFields) != 0 {
+		d.appendOtherData(dg, true, false)
+	}
+	d.RouteDatagram(dg)
+}
+
+func (d *DistributedObject) sendAiEntry(ai Channel_t) {
+	msgType := STATESERVER_OBJECT_ENTER_AI_WITH_REQUIRED
+	if len(d.ramFields) != 0 {
+		msgType = STATESERVER_OBJECT_ENTER_AI_WITH_REQUIRED_OTHER
+	}
+	dg := NewDatagram()
+	dg.AddServerHeader(ai, Channel_t(d.do), uint16(msgType))
+	d.appendRequiredData(dg, false, false)
+	if len(d.ramFields) != 0 {
+		d.appendOtherData(dg, false, false)
+	}
+	d.RouteDatagram(dg)
+}
+
+func (d *DistributedObject) sendOwnerEntry(owner Channel_t) {
+	msgType := STATESERVER_OBJECT_ENTER_OWNER_WITH_REQUIRED
+	if len(d.ramFields) != 0 {
+		msgType = STATESERVER_OBJECT_ENTER_OWNER_WITH_REQUIRED_OTHER
+	}
+	dg := NewDatagram()
+	dg.AddServerHeader(owner, Channel_t(d.do), uint16(msgType))
+	d.appendRequiredData(dg, true, true)
+	if len(d.ramFields) != 0 {
+		d.appendOtherData(dg, true, true)
+	}
+	d.RouteDatagram(dg)
+}
+
+func (d *DistributedObject) handleLocationChange(parent Doid_t, zone Zone_t, sender Channel_t) {
+	var targets []Channel_t
+	oldParent := d.parent
+	oldZone := d.zone
+
+	if d.aiChannel != INVALID_CHANNEL {
+		targets = append(targets, d.aiChannel)
+	}
+
+	if d.ownerChannel != INVALID_CHANNEL {
+		targets = append(targets, d.ownerChannel)
+	}
+
+	if parent == d.do {
+		d.log.Warn("Object cannot be parented to itself.")
+		return
+	}
+
+	// Parent change
+	if parent != oldParent {
+		if oldParent != INVALID_DOID {
+			d.UnsubscribeChannel(ParentToChildren(d.parent))
+			targets = append(targets, Channel_t(d.parent))
+			targets = append(targets, LocationAsChannel(d.parent, d.zone))
+		}
+
+		d.parent = parent
+		d.zone = zone
+
+		if parent != INVALID_DOID {
+			d.SubscribeChannel(ParentToChildren(parent))
+			if !d.explicitAi {
+				// Retrieve parent AI
+				dg := NewDatagram()
+				dg.AddServerHeader(Channel_t(parent), Channel_t(d.do), STATESERVER_OBJECT_GET_AI)
+				dg.AddUint32(d.context)
+				d.RouteDatagram(dg)
+				d.context++
+			}
+			targets = append(targets, Channel_t(parent))
+		} else if !d.explicitAi {
+			d.aiChannel = INVALID_CHANNEL
+		}
+	} else if zone != oldZone {
+		d.zone = zone
+		targets = append(targets, Channel_t(d.parent))
+		targets = append(targets, LocationAsChannel(d.parent, d.zone))
+	}
+
+	// Broadcast location change message
+	dg := NewDatagram()
+	dg.AddMultipleServerHeader(targets, sender, STATESERVER_OBJECT_CHANGING_LOCATION)
+	dg.AddDoid(d.do)
+	dg.AddLocation(parent, zone)
+	dg.AddLocation(oldParent, oldZone)
+
+	d.parentSynchronized = false
+
+	if parent != INVALID_DOID {
+		d.sendLocationEntry(LocationAsChannel(parent, zone))
+	}
+}
+
+func (d *DistributedObject) handleAiChange(ai Channel_t, sender Channel_t, explicit bool) {
+	var targets []Channel_t
+	oldAi := d.aiChannel
+	if ai == oldAi {
+		return
+	}
+
+	if oldAi != INVALID_CHANNEL {
+		targets = append(targets, oldAi)
+	}
+
+	if len(d.zoneObjects) != 0 {
+		// Notify children of the change
+		targets = append(targets, ParentToChildren(d.do))
+	}
+
+	d.aiChannel = ai
+	d.explicitAi = explicit
+
+	dg := NewDatagram()
+	dg.AddMultipleServerHeader(targets, sender, STATESERVER_OBJECT_CHANGING_AI)
+	dg.AddDoid(d.do)
+	dg.AddChannel(ai)
+	dg.AddChannel(oldAi)
+	d.RouteDatagram(dg)
+
+	if ai != INVALID_CHANNEL {
+		d.log.Debugf("Sending AI entry to %d", ai)
+		d.sendAiEntry(ai)
+	}
+}
+
+func (d *DistributedObject) annihilate(sender Channel_t, notifyParent bool) {
+	var targets []Channel_t
+	if d.parent != INVALID_DOID {
+		targets = append(targets, LocationAsChannel(d.parent, d.zone))
+		if notifyParent {
+			dg := NewDatagram()
+			dg.AddServerHeader(Channel_t(d.parent), sender, STATESERVER_OBJECT_CHANGING_LOCATION)
+			dg.AddDoid(d.do)
+			dg.AddLocation(INVALID_DOID, 0)
+			dg.AddLocation(d.parent, d.zone)
+			d.RouteDatagram(dg)
+		}
+	}
+
+	if d.ownerChannel != INVALID_CHANNEL {
+		targets = append(targets, d.ownerChannel)
+	}
+
+	if d.aiChannel != INVALID_CHANNEL {
+		targets = append(targets, d.aiChannel)
+	}
+
+	dg := NewDatagram()
+	dg.AddMultipleServerHeader(targets, sender, STATESERVER_OBJECT_DELETE_RAM)
+	dg.AddDoid(d.do)
+	d.RouteDatagram(dg)
+
+	d.deleteChildren(sender)
+	delete(d.stateserver.objects, d.do)
+	d.log.Debug("Deleted object.")
+
+	d.Cleanup()
+}
+
+func (d *DistributedObject) deleteChildren(sender Channel_t) {
+	if len(d.zoneObjects) != 0 {
+		dg := NewDatagram()
+		dg.AddServerHeader(ParentToChildren(d.do), sender, STATESERVER_OBJECT_DELETE_CHILDREN)
+		dg.AddDoid(d.do)
+		d.RouteDatagram(dg)
+	}
+}
+
+func (d *DistributedObject) wakeChildren() {
+	dg := NewDatagram()
+	dg.AddServerHeader(ParentToChildren(d.do), Channel_t(d.do), STATESERVER_OBJECT_GET_LOCATION)
+	dg.AddUint32(STATESERVER_CONTEXT_WAKE_CHILDREN)
+	d.RouteDatagram(dg)
 }
 
 func (d *DistributedObject) HandleDatagram(dg Datagram, dgi *DatagramIterator) {
