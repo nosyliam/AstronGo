@@ -4,6 +4,7 @@ import (
 	"astrongo/dclass/dc"
 	"astrongo/messagedirector"
 	. "astrongo/util"
+	"bytes"
 	"fmt"
 	"github.com/apex/log"
 )
@@ -85,6 +86,8 @@ func NewDistributedObject(ss *StateServer, doid Doid_t, parent Doid_t,
 	do.log.Debug("Object instantiated ...")
 
 	dgi.SeekPayload()
+	do.handleLocationChange(parent, zone, dgi.ReadChannel())
+	do.wakeChildren()
 
 	return do
 }
@@ -333,16 +336,164 @@ func (d *DistributedObject) wakeChildren() {
 	d.RouteDatagram(dg)
 }
 
+func (d *DistributedObject) saveField(field dc.Field, data []uint8) {
+	if field.Keywords().HasKeyword("required") {
+		d.requiredFields[field] = data
+	} else if field.Keywords().HasKeyword("ram") {
+		d.ramFields[field] = data
+	}
+}
+
+func (d *DistributedObject) handleOneUpdate(dgi *DatagramIterator, sender Channel_t) bool {
+	var data *bytes.Buffer
+	fieldId := dgi.ReadUint16()
+	field, ok := d.dclass.GetFieldById(uint(fieldId))
+	if !ok {
+		d.log.Warnf("Update received for unknown field ID=%d", fieldId)
+		return false
+	}
+
+	d.log.Debugf("Handling update for field %s", field.Name())
+	fieldStart := dgi.Tell()
+
+	finish := make(chan bool)
+	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				if _, ok := r.(DatagramIteratorEOF); ok {
+					d.log.Errorf("Received truncated update for field %s", field.Name())
+				}
+				finish <- false
+			}
+		}()
+
+		dgi.UnpackField(field, data)
+		if molecular, ok := field.(*dc.MolecularField); ok {
+			dgi.Seek(fieldStart)
+			count := molecular.GetNumFields()
+			for n := 0; n < count; n++ {
+				fieldData := &bytes.Buffer{}
+				atomic := molecular.GetField(n)
+				dgi.UnpackField(atomic, fieldData)
+				d.saveField(field, fieldData.Bytes())
+			}
+		} else {
+			d.saveField(field, data.Bytes())
+		}
+		finish <- true
+	}()
+
+	success := <-finish
+	if !success {
+		return false
+	}
+
+	var targets []Channel_t
+	if field.Keywords().HasKeyword("broadcast") {
+		targets = append(targets, LocationAsChannel(d.parent, d.zone))
+	}
+
+	if field.Keywords().HasKeyword("airecv") && d.aiChannel != INVALID_CHANNEL && d.aiChannel != sender {
+		targets = append(targets, d.aiChannel)
+	}
+
+	if field.Keywords().HasKeyword("ownrecv") && d.ownerChannel != INVALID_CHANNEL && d.ownerChannel != sender {
+		targets = append(targets, d.ownerChannel)
+	}
+
+	if len(targets) != 0 {
+		dg := NewDatagram()
+		dg.AddMultipleServerHeader(targets, sender, STATESERVER_OBJECT_GET_FIELD)
+		dg.AddDoid(d.do)
+		dg.AddUint16(fieldId)
+		dg.AddData(data.Bytes())
+	}
+	return true
+}
+
+func (d *DistributedObject) handleOneGet(out *Datagram, fieldId uint16, allowUnset bool, subfield bool) bool {
+	field, ok := d.dclass.GetFieldById(uint(fieldId))
+	if !ok {
+		d.log.Warnf("Query received for unknown field ID=%d", fieldId)
+		return false
+	}
+
+	d.log.Debugf("Handling query for field %s", field.Name())
+	if molecular, ok := field.(*dc.MolecularField); ok {
+		count := molecular.GetNumFields()
+		out.AddUint16(fieldId)
+		for n := 0; n < count; n++ {
+			if !d.handleOneGet(out, uint16(molecular.GetField(n).Id()), allowUnset, true) {
+				return false
+			}
+		}
+		return true
+	}
+
+	if data, ok := d.requiredFields[field]; ok {
+		if !subfield {
+			out.AddUint16(fieldId)
+		}
+		out.AddData(data)
+	} else if data, ok := d.ramFields[field]; ok {
+		if !subfield {
+			out.AddUint16(fieldId)
+		}
+		out.AddData(data)
+	} else {
+		return allowUnset
+	}
+
+	return true
+}
+
 func (d *DistributedObject) HandleDatagram(dg Datagram, dgi *DatagramIterator) {
 	sender := dgi.ReadChannel()
 	msgType := dgi.ReadUint16()
 
 	switch msgType {
 	case STATESERVER_DELETE_AI_OBJECTS:
+		if d.aiChannel != dgi.ReadChannel() {
+			d.log.Warnf("Received reset for wrong AI channel!")
+			return
+		}
+
+		d.annihilate(sender, false)
 	case STATESERVER_OBJECT_DELETE_RAM:
+		if d.do != dgi.ReadDoid() {
+			break
+		}
+
+		d.annihilate(sender, false)
 	case STATESERVER_OBJECT_SET_FIELD:
+		do := dgi.ReadDoid()
+		if d.do == do {
+			d.deleteChildren(sender)
+		} else if do == d.parent {
+			d.annihilate(sender, false)
+		}
 	case STATESERVER_OBJECT_SET_FIELDS:
+		if d.do != dgi.ReadDoid() {
+			break
+		}
+
+		count := dgi.ReadUint16()
+		for i := 0; i < int(count); i++ {
+			if !d.handleOneUpdate(dgi, sender) {
+				break
+			}
+		}
 	case STATESERVER_OBJECT_CHANGING_AI:
+		parent := dgi.ReadDoid()
+		newChannel := dgi.ReadChannel()
+		d.log.Debugf("Received changing AI message from %d", parent)
+		if parent != d.parent {
+			d.log.Warnf("Received changing AI message from %d, but AI channel is %d", parent, d.parent)
+		}
+		if d.explicitAi {
+			break
+		}
+		d.handleAiChange(newChannel, sender, false)
 	case STATESERVER_OBJECT_SET_AI:
 	case STATESERVER_OBJECT_GET_AI:
 	case STATESERVER_OBJECT_CHANGING_LOCATION:
