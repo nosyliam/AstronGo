@@ -459,7 +459,7 @@ func (node MolecularField) consume(cls *dc.Class) dc.Field {
 	field := dc.NewMolecularField(node.Name)
 	for _, child := range node.Fields {
 		if f, ok := cls.GetFieldByName(child); ok {
-			if err := field.AddField(*f); err != nil {
+			if err := field.AddField(f); err != nil {
 				panic(fmt.Sprintf("%s at line %d", err.Error(), node.Pos.Line))
 			}
 		} else {

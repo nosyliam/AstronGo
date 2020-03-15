@@ -54,6 +54,9 @@ func Start() {
 	MD.participants = make([]MDParticipant, 0)
 	MD.Handler = MD
 
+	channelMap := ChannelMap{}
+	channelMap.init()
+
 	bindAddr := core.Config.MessageDirector.Bind
 	if bindAddr == "" {
 		bindAddr = "127.0.0.1:7199"
@@ -123,6 +126,8 @@ func (m *MessageDirector) queueLoop() {
 			}()
 			<-finish
 		case <-signalCh:
+			return
+		case <-core.StopChan:
 			return
 		}
 	}

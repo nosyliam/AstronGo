@@ -3,6 +3,7 @@
 package net
 
 import (
+	"astrongo/core"
 	"net"
 	"os"
 	"os/signal"
@@ -65,8 +66,12 @@ func (s *NetworkServer) handleInterrupts() {
 	c := make(chan os.Signal)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	go func() {
-		<-c
-		s.Shutdown()
+		select {
+		case <-c:
+			s.Shutdown()
+		case <-core.StopChan:
+			s.Shutdown()
+		}
 	}()
 }
 

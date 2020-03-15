@@ -8,6 +8,7 @@ import (
 
 var Config *ServerConfig
 var Hash uint32
+var StopChan chan bool // For testing purposes
 
 type Role struct {
 	Type string

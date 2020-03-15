@@ -495,9 +495,79 @@ func (d *DistributedObject) HandleDatagram(dg Datagram, dgi *DatagramIterator) {
 		}
 		d.handleAiChange(newChannel, sender, false)
 	case STATESERVER_OBJECT_SET_AI:
+		newChannel := dgi.ReadChannel()
+		d.log.Debugf("Changing AI channel to %d", newChannel)
+		d.handleAiChange(newChannel, sender, false)
 	case STATESERVER_OBJECT_GET_AI:
+		d.log.Debugf("Received AI query from %d", sender)
+		dg := NewDatagram()
+		dg.AddServerHeader(sender, Channel_t(d.do), STATESERVER_OBJECT_GET_AI_RESP)
+		dg.AddUint32(dgi.ReadUint32()) // Context
+		dg.AddDoid(d.do)
+		dg.AddChannel(d.aiChannel)
+		d.RouteDatagram(dg)
+	case STATESERVER_OBJECT_GET_AI_RESP:
+		dgi.ReadUint32() // Context
+		parent := dgi.ReadDoid()
+		d.log.Debugf("Received AI query response from %d", parent)
+		if parent != d.parent {
+			d.log.Warnf("Received AI channel from %d, but parent is %d", parent, d.parent)
+			return
+		}
+
+		ai := dgi.ReadChannel()
+		if d.explicitAi {
+			return
+		}
+		d.handleAiChange(ai, sender, false)
 	case STATESERVER_OBJECT_CHANGING_LOCATION:
+		child := dgi.ReadDoid()
+		newParent := dgi.ReadDoid()
+		newZone := dgi.ReadZone()
+		oldParent := dgi.ReadDoid()
+		oldZone := dgi.ReadZone()
+		eraseFromSlice := func(slice []Doid_t, element Doid_t) []Doid_t {
+			idx := 0
+			for _, do := range slice {
+				if do != element {
+					slice[idx] = do
+					idx++
+				}
+			}
+			return slice[:idx]
+		}
+		if newParent == d.do {
+			if d.do == oldParent {
+				if newZone == oldZone {
+					return // No change
+				}
+				d.zoneObjects[oldZone] = eraseFromSlice(d.zoneObjects[oldZone], child)
+				if len(d.zoneObjects[oldZone]) == 0 {
+					delete(d.zoneObjects, oldZone)
+				}
+			}
+
+			d.zoneObjects[newZone] = []Doid_t{child}
+
+			dg := NewDatagram()
+			dg.AddServerHeader(Channel_t(child), Channel_t(d.do), STATESERVER_OBJECT_LOCATION_ACK)
+			dg.AddDoid(d.do)
+			dg.AddZone(newZone)
+			d.RouteDatagram(dg)
+		} else if oldParent == d.do {
+			d.zoneObjects[oldZone] = eraseFromSlice(d.zoneObjects[oldZone], child)
+			if len(d.zoneObjects[oldZone]) == 0 {
+				delete(d.zoneObjects, oldZone)
+			}
+		} else {
+			d.log.Warnf("Received changing location from %d for %d, but my id is %d", child, oldParent, d.do)
+		}
 	case STATESERVER_OBJECT_LOCATION_ACK:
+		parent := dgi.ReadDoid()
+		zone := dgi.ReadZone()
+		if parent != d.parent {
+			d.log.Debugf("Received location acknowledgement from %d but my parent is %d!", parent, d.parent)
+		}
 	case STATESERVER_OBJECT_SET_LOCATION:
 	case STATESERVER_OBJECT_GET_LOCATION:
 	case STATESERVER_OBJECT_GET_LOCATION_RESP:
