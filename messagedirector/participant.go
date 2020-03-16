@@ -112,7 +112,7 @@ func NewMDParticipant(conn gonet.Conn) *MDNetworkParticipant {
 	participant.MDParticipantBase.Init()
 	socket := net.NewSocketTransport(conn, 60*time.Second, 4096)
 
-	participant.client = net.NewClient(socket, participant)
+	participant.client = net.NewClient(socket, participant, 60*time.Second)
 	participant.subscriber = &Subscriber{participant: participant, active: true}
 
 	return participant

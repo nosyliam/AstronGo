@@ -27,11 +27,13 @@ type Client struct {
 	tr      Transport
 	handler DatagramHandler
 	buff    bytes.Buffer
+	timeout time.Duration
 }
 
-func NewClient(tr Transport, handler DatagramHandler) *Client {
+func NewClient(tr Transport, handler DatagramHandler, timeout time.Duration) *Client {
 	client := &Client{tr: tr, handler: handler}
 	client.initialize()
+	client.timeout = timeout
 	return client
 }
 
@@ -118,7 +120,7 @@ func (c *Client) SendDatagram(datagram Datagram) {
 		if err != nil {
 			c.disconnect(err)
 		}
-	case <-time.After(60 * time.Second):
+	case <-time.After(c.timeout):
 		c.disconnect(errors.New("write timeout"))
 	}
 
