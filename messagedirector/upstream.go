@@ -5,6 +5,7 @@ import (
 	. "astrongo/util"
 	gonet "net"
 	"os"
+	"time"
 )
 
 type MDUpstream struct {
@@ -17,13 +18,13 @@ type MDUpstream struct {
 func NewMDUpstream(md *MessageDirector, address string) *MDUpstream {
 	up := &MDUpstream{md: md}
 
-	conn, err := gonet.Dial("tcp", address+":7199")
+	conn, err := gonet.Dial("tcp", address)
 	if err != nil {
 		MDLog.Fatalf("upstream failed to connect: %s", err)
 		return nil
 	}
 	socket := net.NewSocketTransport(conn, 0, 4096)
-	up.client = net.NewClient(socket, up)
+	up.client = net.NewClient(socket, up, 60*time.Second)
 	return up
 }
 

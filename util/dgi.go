@@ -17,13 +17,13 @@ type FieldConstraintViolation struct {
 }
 
 type DatagramIterator struct {
-	dg     *Datagram
+	Dg     *Datagram
 	offset Dgsize_t
 	Read   *bytes.Reader
 }
 
 func NewDatagramIterator(dg *Datagram) *DatagramIterator {
-	dgi := &DatagramIterator{dg: dg, Read: bytes.NewReader(dg.Bytes())}
+	dgi := &DatagramIterator{Dg: dg, Read: bytes.NewReader(dg.Bytes())}
 	return dgi
 }
 
@@ -231,7 +231,7 @@ func (dgi *DatagramIterator) ReadData(length Dgsize_t) []uint8 {
 }
 
 func (dgi *DatagramIterator) ReadRemainder() []uint8 {
-	sz := Dgsize_t(dgi.dg.Len()) - dgi.offset
+	sz := Dgsize_t(dgi.Dg.Len()) - dgi.offset
 	return dgi.ReadData(sz)
 }
 
@@ -356,7 +356,7 @@ func (dgi *DatagramIterator) RecipientCount() uint8 {
 		return 0
 	}
 
-	return dgi.dg.Bytes()[0]
+	return dgi.Dg.Bytes()[0]
 }
 
 func (dgi *DatagramIterator) Sender() Channel_t {
@@ -393,7 +393,7 @@ func (dgi *DatagramIterator) SeekPayload() {
 }
 
 func (dgi *DatagramIterator) Skip(len Dgsize_t) {
-	if dgi.offset+len > Dgsize_t(dgi.dg.Len()) {
+	if dgi.offset+len > Dgsize_t(dgi.Dg.Len()) {
 		dgi.panic(int8(len))
 	}
 

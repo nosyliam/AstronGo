@@ -1,5 +1,6 @@
 package messagedirector
 
+/*
 import (
 	. "astrongo/util"
 	"github.com/stretchr/testify/require"
@@ -108,3 +109,4 @@ func init() {
 	channelMap = &ChannelMap{}
 	channelMap.init()
 }
+*/

@@ -247,14 +247,14 @@ func (r *RangeMap) remove(rng Range, sub *Subscriber) {
 	}
 }
 
-func (r *RangeMap) Send(ch Channel_t, dg Datagram) {
+func (r *RangeMap) Send(ch Channel_t, dgi *DatagramIterator) {
 	lock.Lock()
 	defer lock.Unlock()
 
 	for rng, subs := range r.intervals {
 		if rng.Min <= ch && rng.Max >= ch {
 			for _, sub := range subs {
-				go sub.participant.HandleDatagram(dg, NewDatagramIterator(&dg))
+				go sub.participant.HandleDatagram(*dgi.Dg, dgi)
 			}
 		}
 	}
@@ -371,7 +371,7 @@ func (c *ChannelMap) Channel(ch Channel_t) chan interface{} {
 		// Default to range lookup
 		rdchan := make(chan interface{})
 		go func() {
-			if dg, ok := (<-rdchan).(Datagram); ok {
+			if dg, ok := (<-rdchan).(*DatagramIterator); ok {
 				c.ranges.Send(ch, dg)
 			}
 		}()
@@ -415,11 +415,11 @@ func channelRoutine(buf chan interface{}, ch Channel_t) {
 						return
 					}
 				}
-			case Datagram:
+			case *DatagramIterator:
 				channelMap.ranges.Send(ch, data)
 
 				for _, sub := range subscribers {
-					go sub.participant.HandleDatagram(data, NewDatagramIterator(&data))
+					go sub.participant.HandleDatagram(*data.Dg, data)
 				}
 			}
 		}

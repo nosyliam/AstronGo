@@ -108,19 +108,16 @@ func (m *MessageDirector) queueLoop() {
 					receivers = append(receivers, dgi.ReadChannel())
 				}
 
-				// Copy the datagram and seek to it's payload
-				seekDg := NewDatagram()
-				seekDg.Write(obj.dg.Bytes())
-				seekDg.Next(int(dgi.Tell()))
-
 				// Send payload datagram to every available receiver
 				for _, recv := range receivers {
-					channelMap.Channel(recv) <- seekDg
+					seekDgi := NewDatagramIterator(&obj.dg)
+					seekDgi.Seek(dgi.Tell())
+					channelMap.Channel(recv) <- seekDgi
 				}
 
 				// Send message upstream if necessary
 				if obj.md != nil && m.upstream != nil {
-					m.upstream.HandleDatagram(seekDg, nil)
+					m.upstream.HandleDatagram(obj.dg, nil)
 				}
 				finish <- true
 			}()

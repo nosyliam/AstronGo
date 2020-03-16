@@ -1,10 +1,10 @@
-package util
+package test
 
 import (
 	"astrongo/core"
 	"astrongo/eventlogger"
-	"astrongo/messagedirector"
 	"astrongo/net"
+	. "astrongo/util"
 	"encoding/hex"
 	"fmt"
 	gonet "net"
@@ -14,10 +14,18 @@ import (
 	"time"
 )
 
+type UpstreamHandler struct {
+	Server *gonet.Conn
+}
+
+func (u *UpstreamHandler) HandleConnect(conn gonet.Conn) {
+	u.Server = &conn
+}
+
 func StartDaemon(config core.ServerConfig) {
 	core.Config = &config
 	eventlogger.StartEventLogger()
-	messagedirector.Start()
+
 }
 
 func StopDameon() {
@@ -29,7 +37,24 @@ func ReloadConfig(config core.ServerConfig) {
 	StartDaemon(config)
 }
 
-// Utility class for managing Datagrams in a testing environment
+func StartUpstream(bindAddr string) *UpstreamHandler {
+	server := &net.NetworkServer{}
+	handler := &UpstreamHandler{}
+	server.Handler = handler
+	errChan := make(chan error)
+	go func() {
+		err := <-errChan
+		switch err {
+		case nil:
+		default:
+			panic(fmt.Sprintf("Failed to open upstream: %s", err.Error()))
+		}
+	}()
+	go server.Start(bindAddr, errChan)
+	return handler
+}
+
+// Utility class for managing Datagrams in a test environment
 type TestDatagram struct {
 	*DatagramIterator
 }
@@ -40,11 +65,11 @@ func (d *TestDatagram) Set(dg *Datagram) *TestDatagram {
 }
 
 func (d *TestDatagram) Data() []uint8 {
-	return d.dg.Bytes()
+	return d.Dg.Bytes()
 }
 
 func (d *TestDatagram) Payload() []byte {
-	return d.dg.Bytes()[1+Dgsize_t(d.RecipientCount())*Chansize:]
+	return d.Dg.Bytes()[1+Dgsize_t(d.RecipientCount())*Chansize:]
 }
 
 func (d *TestDatagram) Channels() []Channel_t {
@@ -96,7 +121,7 @@ func (d *TestDatagram) AssertEquals(other *TestDatagram, t *testing.T, client bo
 
 		if !reflect.DeepEqual(other.ReadRemainder(), d.ReadRemainder()) {
 			t.Errorf("Datagram assertion failed: payload\n---EXPECTED DATAGRAM---\n%s,"+
-				"\n---RECEIVED DATAGRAM---\n%s", hex.Dump(d.dg.Bytes()), hex.Dump(other.dg.Bytes()))
+				"\n---RECEIVED DATAGRAM---\n%s", hex.Dump(d.Dg.Bytes()), hex.Dump(other.Dg.Bytes()))
 			return
 		}
 	} else {
@@ -123,7 +148,7 @@ func (d *TestDatagram) AssertEquals(other *TestDatagram, t *testing.T, client bo
 
 		if !reflect.DeepEqual(other.ReadRemainder(), d.ReadRemainder()) {
 			t.Errorf("Datagram assertion failed: payload\n---EXPECTED DATAGRAM---\n%s,"+
-				"\n---RECEIVED DATAGRAM---\n%s", hex.Dump(d.dg.Bytes()), hex.Dump(other.dg.Bytes()))
+				"\n---RECEIVED DATAGRAM---\n%s", hex.Dump(d.Dg.Bytes()), hex.Dump(other.Dg.Bytes()))
 		}
 	}
 }
@@ -132,7 +157,7 @@ func (d *TestDatagram) Create(recipients []Channel_t, sender Channel_t, msgType 
 	dg := NewDatagram()
 	dg.AddMultipleServerHeader(recipients, sender, msgType)
 	d.DatagramIterator = NewDatagramIterator(&dg)
-	return d.dg
+	return d.Dg
 }
 
 func (d *TestDatagram) CreateControl() *Datagram {
@@ -140,7 +165,7 @@ func (d *TestDatagram) CreateControl() *Datagram {
 	dg.AddUint8(1)
 	dg.AddChannel(CONTROL_MESSAGE)
 	d.DatagramIterator = NewDatagramIterator(&dg)
-	return d.dg
+	return d.Dg
 }
 
 func (d *TestDatagram) CreateAddChannel(ch Channel_t) *Datagram {
@@ -148,7 +173,7 @@ func (d *TestDatagram) CreateAddChannel(ch Channel_t) *Datagram {
 	dg.AddControlHeader(CONTROL_ADD_CHANNEL)
 	dg.AddChannel(ch)
 	d.DatagramIterator = NewDatagramIterator(&dg)
-	return d.dg
+	return d.Dg
 }
 
 func (d *TestDatagram) CreateRemoveChannel(ch Channel_t) *Datagram {
@@ -156,7 +181,7 @@ func (d *TestDatagram) CreateRemoveChannel(ch Channel_t) *Datagram {
 	dg.AddControlHeader(CONTROL_REMOVE_CHANNEL)
 	dg.AddChannel(ch)
 	d.DatagramIterator = NewDatagramIterator(&dg)
-	return d.dg
+	return d.Dg
 }
 
 func (d *TestDatagram) CreateAddRange(upper Channel_t, lower Channel_t) *Datagram {
@@ -165,7 +190,7 @@ func (d *TestDatagram) CreateAddRange(upper Channel_t, lower Channel_t) *Datagra
 	dg.AddChannel(upper)
 	dg.AddChannel(lower)
 	d.DatagramIterator = NewDatagramIterator(&dg)
-	return d.dg
+	return d.Dg
 }
 
 func (d *TestDatagram) CreateRemoveRange(upper Channel_t, lower Channel_t) *Datagram {
@@ -174,7 +199,7 @@ func (d *TestDatagram) CreateRemoveRange(upper Channel_t, lower Channel_t) *Data
 	dg.AddChannel(upper)
 	dg.AddChannel(lower)
 	d.DatagramIterator = NewDatagramIterator(&dg)
-	return d.dg
+	return d.Dg
 }
 
 func (d *TestDatagram) CreateAddPostRemove(sender Channel_t, data Datagram) *Datagram {
@@ -183,7 +208,7 @@ func (d *TestDatagram) CreateAddPostRemove(sender Channel_t, data Datagram) *Dat
 	dg.AddChannel(sender)
 	dg.AddBlob(&data)
 	d.DatagramIterator = NewDatagramIterator(&dg)
-	return d.dg
+	return d.Dg
 }
 
 func (d *TestDatagram) CreateSetConName(name string) *Datagram {
@@ -191,7 +216,7 @@ func (d *TestDatagram) CreateSetConName(name string) *Datagram {
 	dg.AddControlHeader(CONTROL_SET_CON_NAME)
 	dg.AddString(name)
 	d.DatagramIterator = NewDatagramIterator(&dg)
-	return d.dg
+	return d.Dg
 }
 
 func (d *TestDatagram) CreateSetConUrl(name string) *Datagram {
@@ -199,17 +224,25 @@ func (d *TestDatagram) CreateSetConUrl(name string) *Datagram {
 	dg.AddControlHeader(CONTROL_SET_CON_URL)
 	dg.AddString(name)
 	d.DatagramIterator = NewDatagramIterator(&dg)
-	return d.dg
+	return d.Dg
 }
 
-// Utility class for managing MD connections in a testing environment
+// Utility class for managing MD connections in a test environment
 type TestMDConnection struct {
 	*net.Client
 	messages chan Datagram
 	name     string
 }
 
-func (c *TestMDConnection) Connect(addr string, name string) {
+func (c *TestMDConnection) Set(conn gonet.Conn, name string) *TestMDConnection {
+	c.messages = make(chan Datagram, 200)
+	c.name = name
+	socket := net.NewSocketTransport(conn, 60*time.Second, 4096)
+	c.Client = net.NewClient(socket, c, 100*time.Millisecond)
+	return c
+}
+
+func (c *TestMDConnection) Connect(addr string, name string) *TestMDConnection {
 	c.messages = make(chan Datagram, 200)
 	c.name = name
 	conn, err := gonet.Dial("tcp", addr)
@@ -219,20 +252,24 @@ func (c *TestMDConnection) Connect(addr string, name string) {
 
 	socket := net.NewSocketTransport(conn, 60*time.Second, 4096)
 	c.Client = net.NewClient(socket, c, 100*time.Millisecond)
+	return c
 }
 
 func (c *TestMDConnection) HandleDatagram(dg Datagram, dgi *DatagramIterator) {
 	c.messages <- dg
 }
 
-func (c *TestMDConnection) ReceiveDatagram(dg Datagram) { /* conn -> client; not needed */ }
-func (c *TestMDConnection) Terminate(err error)         { /* not needed */ }
+func (c *TestMDConnection) ReceiveDatagram(dg Datagram) {
+	c.messages <- dg
+}
+
+func (c *TestMDConnection) Terminate(err error) { /* not needed */ }
 
 func (c *TestMDConnection) Receive() *Datagram {
 	select {
 	case dg := <-c.messages:
 		return &dg
-	case <-time.After(100 * time.Millisecond):
+	case <-time.After(101 * time.Millisecond):
 		panic("No message received!")
 	}
 }
@@ -241,8 +278,9 @@ func (c *TestMDConnection) Expect(t *testing.T, dg Datagram, client bool) {
 	recv := c.ReceiveMaybe()
 	if recv == nil {
 		t.Errorf("No datagram received for connection %s", c.name)
+		return
 	}
-	TestDatagram{}.Set(recv).AssertEquals(TestDatagram{}.Set(&dg), t, client)
+	(&TestDatagram{}).Set(recv).AssertEquals((&TestDatagram{}).Set(&dg), t, client)
 }
 
 func (c *TestMDConnection) ReceiveMany(t *testing.T, datagrams []Datagram, client bool) {
@@ -263,10 +301,10 @@ func (c *TestMDConnection) ReceiveMany(t *testing.T, datagrams []Datagram, clien
 			}
 		}
 
-		testRecv := TestDatagram{}.Set(recv)
+		testRecv := (&TestDatagram{}).Set(recv)
 		idx, found := 0, false
 		for _, dg := range datagrams {
-			testDg := TestDatagram{}.Set(&dg)
+			testDg := (&TestDatagram{}).Set(&dg)
 			if (client && testRecv.Equals(testDg)) || testRecv.Matches(testDg) {
 				recvs = append(recvs, dg)
 				found = true
@@ -303,7 +341,7 @@ func (c *TestMDConnection) Flush() {
 	}
 }
 
-// Utility class for addressing multiple channels in a testing environment
+// Utility class for addressing multiple channels in a test environment
 type TestChannelConnection struct {
 	TestMDConnection
 	channels map[Channel_t]bool
@@ -315,28 +353,28 @@ func (c *TestChannelConnection) Create(addr string, name string, ch Channel_t) {
 
 	if ch != 0 {
 		c.channels[ch] = true
-		c.SendDatagram(*TestDatagram{}.CreateAddChannel(ch))
+		c.SendDatagram(*(&TestDatagram{}).CreateAddChannel(ch))
 	}
 }
 
 func (c *TestChannelConnection) AddChannel(ch Channel_t) {
 	if _, ok := c.channels[ch]; !ok {
 		c.channels[ch] = true
-		c.SendDatagram(*TestDatagram{}.CreateAddChannel(ch))
+		c.SendDatagram(*(&TestDatagram{}).CreateAddChannel(ch))
 	}
 }
 
 func (c *TestChannelConnection) RemoveChannel(ch Channel_t) {
 	if _, ok := c.channels[ch]; !ok {
 		delete(c.channels, ch)
-		c.SendDatagram(*TestDatagram{}.CreateRemoveChannel(ch))
+		c.SendDatagram(*(&TestDatagram{}).CreateRemoveChannel(ch))
 	}
 }
 
 func (c *TestChannelConnection) ClearChannels() {
 	for ch, _ := range c.channels {
 		delete(c.channels, ch)
-		c.SendDatagram(*TestDatagram{}.CreateRemoveChannel(ch))
+		c.SendDatagram(*(&TestDatagram{}).CreateRemoveChannel(ch))
 	}
 }
 
