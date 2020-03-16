@@ -3,10 +3,46 @@ package messagedirector
 import (
 	. "astrongo/util"
 	"sync"
+	"sync/atomic"
 )
+
+// TODO: Rewrite everything for efficiency
 
 var lock sync.Mutex
 var channelMap *ChannelMap
+
+type SubscriptionMap struct {
+	sync.Map
+	counter int32
+}
+
+func (s *SubscriptionMap) Increment() {
+	atomic.AddInt32(&s.counter, 1)
+}
+
+func (s *SubscriptionMap) Decrement() {
+	atomic.AddInt32(&s.counter, -1)
+}
+
+func (s *SubscriptionMap) Count() int32 {
+	return atomic.LoadInt32(&s.counter)
+}
+
+type MDDatagram struct {
+	dg       *DatagramIterator
+	sender   MDParticipant
+	sent     []*Subscriber
+	sendLock sync.Mutex
+}
+
+func (m *MDDatagram) HasSent(p *Subscriber) bool {
+	for _, sub := range m.sent {
+		if sub == p {
+			return true
+		}
+	}
+	return false
+}
 
 type Range struct {
 	Min Channel_t
@@ -247,17 +283,25 @@ func (r *RangeMap) remove(rng Range, sub *Subscriber) {
 	}
 }
 
-func (r *RangeMap) Send(ch Channel_t, dgi *DatagramIterator) {
+func (r *RangeMap) Send(ch Channel_t, data *MDDatagram) {
 	lock.Lock()
 	defer lock.Unlock()
+
+	data.sendLock.Lock()
 
 	for rng, subs := range r.intervals {
 		if rng.Min <= ch && rng.Max >= ch {
 			for _, sub := range subs {
-				go sub.participant.HandleDatagram(*dgi.Dg, dgi)
+				if (data.sender == nil || sub.participant.Subscriber() != data.sender.Subscriber()) &&
+					!data.HasSent(sub.participant.Subscriber()) {
+					data.sent = append(data.sent, sub.participant.Subscriber())
+					go sub.participant.HandleDatagram(*data.dg.Dg, data.dg.Copy())
+				}
 			}
 		}
 	}
+
+	data.sendLock.Unlock()
 }
 
 // Each MD participant is represented as a subscriber within the MD; when a participant desires to listen to
@@ -272,7 +316,7 @@ type Subscriber struct {
 }
 
 type ChannelMap struct {
-	// Subscriptions map channels to go channels which accepts datagram or Subscriber objects
+	// Subscriptions maps channels to other sync.Map's which stores subscriptions by present keys
 	subscriptions sync.Map
 
 	// Ranges points to a RangeMap singularity
@@ -314,33 +358,32 @@ func (c *ChannelMap) SubscribeRange(p *Subscriber, rng Range) {
 func (c *ChannelMap) UnsubscribeRange(p *Subscriber, rng Range) {
 	c.ranges.Remove(rng, p)
 	p.ranges = c.ranges.Ranges(p)
-
 }
 
 func (c *ChannelMap) UnsubscribeChannel(p *Subscriber, ch Channel_t) {
-	if chn, ok := c.subscriptions.Load(ch); ok {
-		chn := chn.(chan interface{})
-		p.active = false
-		cpy := Subscriber(*p)
-		chn <- &cpy
-		p.active = true
+	if !p.Subscribed(ch) {
+		return
+	}
 
-		idx := 0
-		for _, c := range p.channels {
-			if c != ch {
-				p.channels[idx] = c
-				idx++
-			}
-		}
-		p.channels = p.channels[:idx]
-		MD.RemoveChannel(ch)
+	loaded, _ := c.subscriptions.LoadOrStore(ch, &SubscriptionMap{})
+	subs := loaded.(*SubscriptionMap)
+	if _, ok := subs.Load(p); ok {
+		subs.Delete(p)
+		subs.Decrement()
 	} else {
 		c.ranges.Remove(Range{ch, ch}, p)
+	}
+
+	if subs.Count() == 0 {
+		channelMap.subscriptions.Delete(ch)
+		MD.RemoveChannel(ch)
 	}
 }
 
 func (c *ChannelMap) UnsubscribeAll(p *Subscriber) {
-	c.UnsubscribeRange(p, Range{0, CHANNEL_MAX})
+	if len(p.ranges) > 0 {
+		c.UnsubscribeRange(p, Range{0, CHANNEL_MAX})
+	}
 	for _, ch := range p.channels {
 		c.UnsubscribeChannel(p, ch)
 	}
@@ -351,79 +394,37 @@ func (c *ChannelMap) SubscribeChannel(p *Subscriber, ch Channel_t) {
 		return
 	}
 
+	loaded, _ := c.subscriptions.LoadOrStore(ch, &SubscriptionMap{})
+	subs := loaded.(*SubscriptionMap)
+	subs.Store(p, true)
+	subs.Increment()
 	p.channels = append(p.channels, ch)
-	if chn, ok := c.subscriptions.Load(ch); !ok {
-		rdchan := make(chan interface{})
-		go channelRoutine(rdchan, ch)
-		rdchan <- p
-		c.subscriptions.Store(ch, rdchan)
-	} else {
-		chn := chn.(chan interface{})
-		chn <- p
+
+	if subs.Count() == 1 {
+		MD.AddChannel(ch)
 	}
 }
 
-func (c *ChannelMap) Channel(ch Channel_t) chan interface{} {
-	if chn, ok := c.subscriptions.Load(ch); ok {
-		chn := chn.(chan interface{})
-		return chn
+func (c *ChannelMap) Send(ch Channel_t, data *MDDatagram) {
+	if subs, ok := c.subscriptions.Load(ch); ok {
+		go func() {
+			data.sendLock.Lock()
+			subs.(*SubscriptionMap).Range(func(iSub, _ interface{}) bool {
+				sub := iSub.(*Subscriber)
+				if (data.sender == nil || sub.participant.Subscriber() != data.sender.Subscriber()) &&
+					!data.HasSent(sub.participant.Subscriber()) {
+					data.sent = append(data.sent, sub.participant.Subscriber())
+					go sub.participant.HandleDatagram(*data.dg.Dg, data.dg.Copy())
+				}
+				return true
+			})
+			data.sendLock.Unlock()
+		}()
 	} else {
 		// Default to range lookup
-		rdchan := make(chan interface{})
-		go func() {
-			if dg, ok := (<-rdchan).(*DatagramIterator); ok {
-				c.ranges.Send(ch, dg)
-			}
-		}()
-		return rdchan
+		c.ranges.Send(ch, data)
 	}
 
-}
-
-// channelRoutine implements a goroutine which continually reads a given chan for datagram or subscriber objects.
-//  When given a datagram, it uses channel associated with the routine is a receiver and will route the
-//  the datagram to all of its subscribers. When given a subscriber, it will append the object to its subscribers
-//  list; however, if the subscriber is inactive (denoted by subscriber.active) it assumes that a removal operation
-//  operation is taking place and will attempt to remove it from the subscribers list.
-func channelRoutine(buf chan interface{}, ch Channel_t) {
-	var subscribers []*Subscriber
-	MD.AddChannel(ch)
-	for {
-		select {
-		case v, ok := <-buf:
-			if !ok {
-				break
-			}
-
-			switch data := v.(type) {
-			case *Subscriber:
-				if data.active {
-					subscribers = append(subscribers, data)
-				} else {
-					idx := 0
-					for _, sub := range subscribers {
-						if sub.participant != data.participant {
-							subscribers[idx] = sub
-							idx++
-						}
-					}
-					subscribers = subscribers[:idx]
-					// Close dead channel
-					if len(subscribers) == 0 {
-						channelMap.subscriptions.Delete(ch)
-						MD.RemoveChannel(ch)
-						return
-					}
-				}
-			case *DatagramIterator:
-				channelMap.ranges.Send(ch, data)
-
-				for _, sub := range subscribers {
-					go sub.participant.HandleDatagram(*data.Dg, data)
-				}
-			}
-		}
-	}
 }
 
 func init() {

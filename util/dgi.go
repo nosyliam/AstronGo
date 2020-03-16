@@ -27,6 +27,12 @@ func NewDatagramIterator(dg *Datagram) *DatagramIterator {
 	return dgi
 }
 
+func (dgi *DatagramIterator) Copy() *DatagramIterator {
+	newDgi := NewDatagramIterator(dgi.Dg)
+	newDgi.Seek(dgi.Tell())
+	return dgi
+}
+
 func (dgi *DatagramIterator) panic(len int8) {
 	panic(DatagramIteratorEOF{
 		fmt.Sprintf("datagram iterator eof, read length: %d buff length: %d", len, dgi.Read.Len()),

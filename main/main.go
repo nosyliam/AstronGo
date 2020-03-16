@@ -29,9 +29,9 @@ func init() {
 func main() {
 	pflag.Usage = func() {
 		fmt.Printf(
-			`Usage:    astrond [options]... [CONFIG_FILE]
+			`Usage:    astron [options]... [CONFIG_FILE]
       
-      Astrond is a distributed server daemon.
+      Astron is a distributed server CLI.
       By default Astron looks for a configuration file in the current
       working directory as astrond.yml.  A different config file path
       can be specified as a positional argument.

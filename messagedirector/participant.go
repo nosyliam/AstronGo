@@ -21,6 +21,7 @@ type MDParticipant interface {
 	UnsubscribeRange(Range)
 
 	Name() string
+	Subscriber() *Subscriber
 }
 
 type MDParticipantBase struct {
@@ -37,6 +38,10 @@ func (m *MDParticipantBase) Init() {
 	m.postRemoves = make(map[Channel_t][]Datagram)
 	m.subscriber = &Subscriber{participant: m, active: true}
 	MD.participants = append(MD.participants, m)
+}
+
+func (m *MDParticipantBase) Subscriber() *Subscriber {
+	return m.subscriber
 }
 
 func (m *MDParticipantBase) RouteDatagram(datagram Datagram) {
@@ -168,6 +173,6 @@ func (m *MDNetworkParticipant) ReceiveDatagram(dg Datagram) {
 
 func (m *MDNetworkParticipant) Terminate(err error) {
 	MDLog.Infof("Lost connection from %s: %s", m.conn.RemoteAddr(), err.Error())
-	m.client.Close()
 	m.Cleanup()
+	m.client.Close()
 }
