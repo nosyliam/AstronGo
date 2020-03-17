@@ -49,7 +49,7 @@ func (c *Client) defragment() {
 	for c.buff.Len() > Dgsize {
 		data := c.buff.Bytes()
 		sz := binary.LittleEndian.Uint32(data[0:Dgsize])
-		if c.buff.Len() > int(sz+Dgsize) {
+		if c.buff.Len() >= int(sz+Dgsize) {
 			overreadSz := c.buff.Len() - int(sz) - int(Dgsize)
 			dg := NewDatagram()
 			dg.Write(data[Dgsize : sz+Dgsize])
@@ -61,40 +61,39 @@ func (c *Client) defragment() {
 				c.buff.Truncate(0)
 			}
 
-			c.Lock()
 			go c.handler.ReceiveDatagram(dg)
-			c.Unlock()
 		} else {
-			break
+			return
 		}
 	}
 }
 
 func (c *Client) processInput(len int, data []byte) {
-	c.Mutex.Lock()
+	c.Lock()
 
 	// Check if we have enough data for a single datagram
-	if c.buff.Len() == 0 && len > Dgsize {
+	if c.buff.Len() == 0 && len >= Dgsize {
 		sz := binary.LittleEndian.Uint32(data[0:Dgsize])
 		if sz == uint32(len-Dgsize) {
 			// We have enough data for a full datagram; send it off
 			dg := NewDatagram()
 			dg.Write(data[Dgsize:])
 			go c.handler.ReceiveDatagram(dg)
-			c.Mutex.Unlock()
+			c.Unlock()
 			return
 		}
 	}
 
 	c.buff.Write(data)
-	c.Mutex.Unlock()
 	c.defragment()
+	c.Unlock()
+
 }
 
 func (c *Client) read() {
 	buff := make([]byte, BUFF_SIZE)
 	if n, err := c.tr.Read(buff); err == nil {
-		c.processInput(n, buff[0:n])
+		go c.processInput(n, buff[0:n])
 		c.read()
 	} else {
 		c.disconnect(err)
@@ -105,8 +104,7 @@ func (c *Client) SendDatagram(datagram Datagram) {
 	var dg Datagram
 	dg = NewDatagram()
 
-	c.Mutex.Lock()
-	defer c.Mutex.Unlock()
+	c.Lock()
 
 	dg.AddSize(Dgsize_t(datagram.Len()))
 	dg.Write(datagram.Bytes())
@@ -124,6 +122,7 @@ func (c *Client) SendDatagram(datagram Datagram) {
 		c.disconnect(errors.New("write timeout"))
 	}
 
+	c.Unlock()
 }
 
 func (c *Client) Close() {

@@ -358,10 +358,6 @@ func (dgi *DatagramIterator) SkipDtype(dtype dc.BaseType) {
 }
 
 func (dgi *DatagramIterator) RecipientCount() uint8 {
-	if dgi.Read.Len() == 0 {
-		return 0
-	}
-
 	return dgi.Dg.Bytes()[0]
 }
 
@@ -369,6 +365,7 @@ func (dgi *DatagramIterator) Sender() Channel_t {
 	offset := dgi.offset
 
 	dgi.offset = 1 + Dgsize_t(dgi.RecipientCount())*Chansize
+	dgi.Read.Seek(int64(dgi.offset), io.SeekStart)
 	sender := dgi.ReadChannel()
 
 	dgi.offset = offset
@@ -378,7 +375,8 @@ func (dgi *DatagramIterator) Sender() Channel_t {
 func (dgi *DatagramIterator) MessageType() uint16 {
 	offset := dgi.offset
 
-	dgi.offset = 1 + Dgsize_t(dgi.RecipientCount())*(Chansize+1)
+	dgi.offset = 1 + Dgsize_t(dgi.RecipientCount()+1)*Chansize
+	dgi.Read.Seek(int64(dgi.offset), io.SeekStart)
 	msg := dgi.ReadUint16()
 
 	dgi.offset = offset
@@ -391,11 +389,12 @@ func (dgi *DatagramIterator) Tell() Dgsize_t {
 
 func (dgi *DatagramIterator) Seek(pos Dgsize_t) {
 	dgi.offset = pos
+	dgi.Read.Seek(int64(dgi.offset), io.SeekStart)
 }
 
 func (dgi *DatagramIterator) SeekPayload() {
-	dgi.Seek(0)
 	dgi.offset = 1 + Dgsize_t(dgi.RecipientCount())*Chansize
+	dgi.Read.Seek(int64(dgi.offset), io.SeekStart)
 }
 
 func (dgi *DatagramIterator) Skip(len Dgsize_t) {
@@ -404,4 +403,5 @@ func (dgi *DatagramIterator) Skip(len Dgsize_t) {
 	}
 
 	dgi.offset += len
+	dgi.Read.Seek(int64(dgi.offset), io.SeekStart)
 }

@@ -1,3 +1,5 @@
+// All of the tests below can be directly attributed Astron C++; major credit to them.
+
 package messagedirector
 
 import (
@@ -130,7 +132,8 @@ func TestMD_Multi(t *testing.T) {
 		client2.SendDatagram(*dg)
 	}
 
-	time.Sleep(200 * time.Millisecond)
+	// Because Astron is not an instantaneous system, the control messages need time to process
+	time.Sleep(300 * time.Millisecond)
 	mainClient.Flush()
 
 	// A datagram on channel 2222 should be delivered on both clients
@@ -179,4 +182,87 @@ func TestMD_Multi(t *testing.T) {
 		client1.SendDatagram(*dg)
 		client2.SendDatagram(*dg)
 	}
+}
+
+func TestMD_PostRemove(t *testing.T) {
+	mainClient.Flush()
+	client1.Flush()
+	client2.Flush()
+
+	prDg := (&TestDatagram{}).Create([]Channel_t{6969}, 6969, 2000)
+	prDg.AddString("nosyliam is epic")
+
+	addPrDg := (&TestDatagram{}).CreateAddPostRemove(420, *prDg)
+	client1.SendDatagram(*addPrDg)
+
+	// Post remove should be pre-routed upstream
+	mainClient.Expect(t, *addPrDg, false)
+
+	// Nothing else should be happening
+	mainClient.ExpectNone(t)
+	client1.ExpectNone(t)
+	client2.ExpectNone(t)
+
+	// Reconnect and see if the PR gets sent
+	client1.Close()
+	client1 = (&TestMDConnection{}).Connect(":57123", "client #1")
+
+	// Upstream should receive the PR and a clear_post_remove
+	clearPrDg := (&TestDatagram{}).CreateClearPostRemove(420)
+	mainClient.ExpectMany(t, []Datagram{*prDg, *clearPrDg}, false, true)
+
+	// Reconnect; the PR shouldn't be sent again
+	client1.Close()
+	client1 = (&TestMDConnection{}).Connect(":57123", "client #1")
+	mainClient.ExpectNone(t)
+
+	// Add the previous PR to the other client
+	addPrDg = (&TestDatagram{}).CreateAddPostRemove(69, *prDg)
+	client2.SendDatagram(*addPrDg)
+	mainClient.Expect(t, *addPrDg, false)
+
+	// Cancel it!
+	clearPrDg = (&TestDatagram{}).CreateClearPostRemove(69)
+	client2.SendDatagram(*clearPrDg)
+	mainClient.Expect(t, *clearPrDg, false)
+
+	// Did it work?
+	client2.Close()
+	client2 = (&TestMDConnection{}).Connect(":57123", "client #2")
+	mainClient.ExpectNone(t)
+
+	// Let's add some more PRs to client 1
+	prs := []Datagram{
+		*(&TestDatagram{}).CreateAddPostRemove(69, *prDg),
+		*(&TestDatagram{}).CreateAddPostRemove(69,
+			*(&TestDatagram{}).Create([]Channel_t{0x1337}, 6969, 0xBEEF)),
+		*(&TestDatagram{}).CreateAddPostRemove(420,
+			*(&TestDatagram{}).Create([]Channel_t{0x13337}, 6969, 0xDEAD)),
+	}
+	client1.SendDatagram(prs[0])
+	client1.SendDatagram(prs[1])
+	client1.SendDatagram(prs[2])
+
+	// They should be pre-routed upstream
+	mainClient.ExpectMany(t, prs, false, true)
+
+	// Now our clients should be empty
+	mainClient.ExpectNone(t)
+	client1.ExpectNone(t)
+	client2.ExpectNone(t)
+
+	// Reconnect and see if all of the datagrams get sent
+	client1.Close()
+	client1 = (&TestMDConnection{}).Connect(":57123", "client #1")
+
+	expected := []Datagram{
+		*prDg,
+		*(&TestDatagram{}).Create([]Channel_t{0x1337}, 6969, 0xBEEF),
+		*(&TestDatagram{}).Create([]Channel_t{0x13337}, 6969, 0xDEAD),
+		*(&TestDatagram{}).CreateClearPostRemove(69),
+		*(&TestDatagram{}).CreateClearPostRemove(420),
+	}
+
+	mainClient.ExpectMany(t, expected, false, true)
+	mainClient.ExpectNone(t)
 }

@@ -370,6 +370,11 @@ func (c *ChannelMap) UnsubscribeChannel(p *Subscriber, ch Channel_t) {
 	if _, ok := subs.Load(p); ok {
 		subs.Delete(p)
 		subs.Decrement()
+		for n, userCh := range p.channels {
+			if userCh == ch {
+				p.channels = append(p.channels[:n], p.channels[n+1:]...)
+			}
+		}
 	} else {
 		c.ranges.Remove(Range{ch, ch}, p)
 	}
@@ -384,6 +389,7 @@ func (c *ChannelMap) UnsubscribeAll(p *Subscriber) {
 	if len(p.ranges) > 0 {
 		c.UnsubscribeRange(p, Range{0, CHANNEL_MAX})
 	}
+
 	for _, ch := range p.channels {
 		c.UnsubscribeChannel(p, ch)
 	}

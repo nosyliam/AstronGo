@@ -14,6 +14,9 @@ import (
 	"time"
 )
 
+type LogSilencer struct {
+}
+
 type UpstreamHandler struct {
 	Server *gonet.Conn
 }
@@ -113,6 +116,16 @@ func (d *TestDatagram) Equals(other *TestDatagram) bool {
 func (d *TestDatagram) AssertEquals(other *TestDatagram, t *testing.T, client bool) {
 	d.Seek(0)
 	other.Seek(0)
+
+	errorComp := func() {
+		err := "Datagram assertion failed: payload" +
+			"\n---EXPECTED DATAGRAM---\n%sRecipients=%d, Sender=%d, Message type=%d\n" +
+			"\n---RECEIVED DATAGRAM---\n%sRecipients=%d, Sender=%d, Message type=%d"
+		t.Errorf(err, hex.Dump(d.Dg.Bytes()), d.RecipientCount(), d.Sender(), d.MessageType(),
+			hex.Dump(other.Dg.Bytes()), other.RecipientCount(), other.Sender(), other.MessageType())
+		panic("")
+	}
+
 	if client {
 		if msgTypeExpected, msgTypeReceived := d.ReadUint16(), other.ReadUint16(); msgTypeExpected != msgTypeReceived {
 			t.Errorf("Datagram assertion failed: msg type, %d != %d", msgTypeExpected, msgTypeReceived)
@@ -120,14 +133,13 @@ func (d *TestDatagram) AssertEquals(other *TestDatagram, t *testing.T, client bo
 		}
 
 		if !reflect.DeepEqual(other.ReadRemainder(), d.ReadRemainder()) {
-			t.Errorf("Datagram assertion failed: payload\n---EXPECTED DATAGRAM---\n%s,"+
-				"\n---RECEIVED DATAGRAM---\n%s", hex.Dump(d.Dg.Bytes()), hex.Dump(other.Dg.Bytes()))
+			errorComp()
 			return
 		}
 	} else {
 		if channelsExpected, channelsReceived := d.ReadUint8(), other.ReadUint8(); channelsExpected != channelsReceived {
 			t.Errorf("Datagram assertion failed: channels expected, %d != %d", channelsExpected, channelsReceived)
-			return
+			//return
 		}
 
 		expectedRecipients, recievedRecipients := d.Channels(), other.Channels()
@@ -147,8 +159,8 @@ func (d *TestDatagram) AssertEquals(other *TestDatagram, t *testing.T, client bo
 		}
 
 		if !reflect.DeepEqual(other.ReadRemainder(), d.ReadRemainder()) {
-			t.Errorf("Datagram assertion failed: payload\n---EXPECTED DATAGRAM---\n%s,"+
-				"\n---RECEIVED DATAGRAM---\n%s", hex.Dump(d.Dg.Bytes()), hex.Dump(other.Dg.Bytes()))
+			errorComp()
+			return
 		}
 	}
 }
@@ -211,6 +223,14 @@ func (d *TestDatagram) CreateAddPostRemove(sender Channel_t, data Datagram) *Dat
 	return d.Dg
 }
 
+func (d *TestDatagram) CreateClearPostRemove(sender Channel_t) *Datagram {
+	dg := NewDatagram()
+	dg.AddControlHeader(CONTROL_CLEAR_POST_REMOVES)
+	dg.AddChannel(sender)
+	d.DatagramIterator = NewDatagramIterator(&dg)
+	return d.Dg
+}
+
 func (d *TestDatagram) CreateSetConName(name string) *Datagram {
 	dg := NewDatagram()
 	dg.AddControlHeader(CONTROL_SET_CON_NAME)
@@ -232,17 +252,20 @@ type TestMDConnection struct {
 	*net.Client
 	messages chan Datagram
 	name     string
+	timeout  int
 }
 
 func (c *TestMDConnection) Set(conn gonet.Conn, name string) *TestMDConnection {
+	c.timeout = 201
 	c.messages = make(chan Datagram, 200)
 	c.name = name
 	socket := net.NewSocketTransport(conn, 60*time.Second, 4096)
-	c.Client = net.NewClient(socket, c, 100*time.Millisecond)
+	c.Client = net.NewClient(socket, c, 200*time.Millisecond)
 	return c
 }
 
 func (c *TestMDConnection) Connect(addr string, name string) *TestMDConnection {
+	c.timeout = 201
 	c.messages = make(chan Datagram, 200)
 	c.name = name
 	conn, err := gonet.Dial("tcp", addr)
@@ -251,7 +274,7 @@ func (c *TestMDConnection) Connect(addr string, name string) *TestMDConnection {
 	}
 
 	socket := net.NewSocketTransport(conn, 60*time.Second, 4096)
-	c.Client = net.NewClient(socket, c, 100*time.Millisecond)
+	c.Client = net.NewClient(socket, c, 200*time.Millisecond)
 	return c
 }
 
@@ -269,7 +292,7 @@ func (c *TestMDConnection) Receive() *Datagram {
 	select {
 	case dg := <-c.messages:
 		return &dg
-	case <-time.After(101 * time.Millisecond):
+	case <-time.After(time.Duration(c.timeout) * time.Millisecond):
 		panic("No message received!")
 	}
 }
@@ -278,15 +301,19 @@ func (c *TestMDConnection) Expect(t *testing.T, dg Datagram, client bool) {
 	recv := c.ReceiveMaybe()
 	if recv == nil {
 		t.Errorf("No datagram received for connection %s", c.name)
+		panic("")
 		return
 	}
-	(&TestDatagram{}).Set(recv).AssertEquals((&TestDatagram{}).Set(&dg), t, client)
+	(&TestDatagram{}).Set(&dg).AssertEquals((&TestDatagram{}).Set(recv), t, client)
 }
 
-func (c *TestMDConnection) ReceiveMany(t *testing.T, datagrams []Datagram, client bool) {
+func (c *TestMDConnection) ExpectMany(t *testing.T, datagrams []Datagram, client bool, allowTime bool) {
 	var recvs []Datagram
+	if allowTime {
+		c.timeout = 1000
+	}
 	received, matched, expected := 0, 0, len(datagrams)
-	for len(datagrams) > 0 {
+	for len(datagrams) != matched {
 		recv := c.ReceiveMaybe()
 		if recv == nil {
 			if matched == 0 {
@@ -294,35 +321,42 @@ func (c *TestMDConnection) ReceiveMany(t *testing.T, datagrams []Datagram, clien
 			} else {
 				var msgTypes []string
 				for _, dg := range recvs {
-					msgTypes = append(msgTypes, string(NewDatagramIterator(&dg).MessageType()))
+					msgTypes = append(msgTypes, fmt.Sprintf("%d", NewDatagramIterator(&dg).MessageType()))
 				}
 				t.Errorf("Recieved %d datagrams, of which %d matched, but expected %d\n"+
 					"Received message types: %s", received, matched, expected, strings.Join(msgTypes, ", "))
 			}
+			for n, dg := range recvs {
+				fmt.Printf("Datagram #%d:\n%s\n", n, hex.Dump(dg.Bytes()))
+			}
+			break
+		} else {
+			received++
 		}
 
 		testRecv := (&TestDatagram{}).Set(recv)
-		idx, found := 0, false
+		found := false
 		for _, dg := range datagrams {
 			testDg := (&TestDatagram{}).Set(&dg)
 			if (client && testRecv.Equals(testDg)) || testRecv.Matches(testDg) {
 				recvs = append(recvs, dg)
 				found = true
 			}
-			datagrams[idx] = dg
-			idx++
 		}
-		datagrams = datagrams[:idx]
+
 		if found {
 			matched++
 		}
 	}
+
+	c.timeout = 201
 }
 
 func (c *TestMDConnection) ExpectNone(t *testing.T) {
 	recv := c.ReceiveMaybe()
 	if recv != nil {
 		t.Errorf("Received unexpected datagram:\n%s", hex.Dump(recv.Bytes()))
+		panic("")
 	}
 }
 
@@ -330,7 +364,7 @@ func (c *TestMDConnection) ReceiveMaybe() *Datagram {
 	select {
 	case dg := <-c.messages:
 		return &dg
-	case <-time.After(101 * time.Millisecond):
+	case <-time.After(time.Duration(c.timeout) * time.Millisecond):
 		return nil
 	}
 }
