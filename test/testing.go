@@ -252,11 +252,11 @@ type TestMDConnection struct {
 	*net.Client
 	messages chan Datagram
 	name     string
-	timeout  int
+	Timeout  int
 }
 
 func (c *TestMDConnection) Set(conn gonet.Conn, name string) *TestMDConnection {
-	c.timeout = 201
+	c.Timeout = 201
 	c.messages = make(chan Datagram, 200)
 	c.name = name
 	socket := net.NewSocketTransport(conn, 60*time.Second, 4096)
@@ -265,7 +265,7 @@ func (c *TestMDConnection) Set(conn gonet.Conn, name string) *TestMDConnection {
 }
 
 func (c *TestMDConnection) Connect(addr string, name string) *TestMDConnection {
-	c.timeout = 201
+	c.Timeout = 201
 	c.messages = make(chan Datagram, 200)
 	c.name = name
 	conn, err := gonet.Dial("tcp", addr)
@@ -292,7 +292,7 @@ func (c *TestMDConnection) Receive() *Datagram {
 	select {
 	case dg := <-c.messages:
 		return &dg
-	case <-time.After(time.Duration(c.timeout) * time.Millisecond):
+	case <-time.After(time.Duration(c.Timeout) * time.Millisecond):
 		panic("No message received!")
 	}
 }
@@ -310,14 +310,15 @@ func (c *TestMDConnection) Expect(t *testing.T, dg Datagram, client bool) {
 func (c *TestMDConnection) ExpectMany(t *testing.T, datagrams []Datagram, client bool, allowTime bool) {
 	var recvs []Datagram
 	if allowTime {
-		c.timeout = 1000
+		c.Timeout = 1000
 	}
 	received, matched, expected := 0, 0, len(datagrams)
 	for len(datagrams) != matched {
 		recv := c.ReceiveMaybe()
 		if recv == nil {
-			if matched == 0 {
+			if received == 0 {
 				t.Errorf("Expected %d datagrams, but received nothing", expected)
+				panic("")
 			} else {
 				var msgTypes []string
 				for _, dg := range recvs {
@@ -349,7 +350,7 @@ func (c *TestMDConnection) ExpectMany(t *testing.T, datagrams []Datagram, client
 		}
 	}
 
-	c.timeout = 201
+	c.Timeout = 201
 }
 
 func (c *TestMDConnection) ExpectNone(t *testing.T) {
@@ -364,7 +365,7 @@ func (c *TestMDConnection) ReceiveMaybe() *Datagram {
 	select {
 	case dg := <-c.messages:
 		return &dg
-	case <-time.After(time.Duration(c.timeout) * time.Millisecond):
+	case <-time.After(time.Duration(c.Timeout) * time.Millisecond):
 		return nil
 	}
 }

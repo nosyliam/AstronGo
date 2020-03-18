@@ -2,6 +2,7 @@ package messagedirector
 
 import (
 	. "astrongo/util"
+	"sort"
 	"sync"
 	"sync/atomic"
 )
@@ -223,23 +224,22 @@ func (r *RangeMap) removeIntervalSub(int Range, p *Subscriber) {
 
 func (r *RangeMap) Remove(rng Range, sub *Subscriber) {
 	lock.Lock()
-	r.remove(rng, sub)
-	MD.RemoveRange(rng.Min, rng.Max)
+	r.remove(rng, sub, false)
 	lock.Unlock()
 }
 
-func (r *RangeMap) remove(rng Range, sub *Subscriber) {
+func (r *RangeMap) remove(rng Range, sub *Subscriber, nested bool) {
 	for erng, _ := range r.intervals {
 		// {xxxxxx[========]xxxxxxxx}
 		if erng.Min >= rng.Min && erng.Max <= rng.Max {
 			r.removeSubInterval(sub, erng)
 			r.removeIntervalSub(erng, sub)
 			if erng == rng {
-				return
+				break
 			}
-			r.remove(Range{rng.Min, erng.Min - 1}, sub)
-			r.remove(Range{erng.Max + 1, rng.Max}, sub)
-			return
+			r.remove(Range{rng.Min, erng.Min - 1}, sub, true)
+			r.remove(Range{erng.Max + 1, rng.Max}, sub, true)
+			break
 		}
 
 		// [======{xxxxxxxx}========]
@@ -248,37 +248,81 @@ func (r *RangeMap) remove(rng Range, sub *Subscriber) {
 			rng2 := r.Split(rng1, rng1.Max, rng.Max, rng1.Min, false)
 			r.removeSubInterval(sub, rng2)
 			r.removeIntervalSub(rng2, sub)
-			return
+			break
 		}
 
 		// [=============={xxxx]xxxx}
-		if rng.Min >= erng.Min && rng.Min <= erng.Max && rng.Max > erng.Max {
+		if rng.Min >= erng.Min && rng.Min <= erng.Max && rng.Max >= erng.Max {
 			if rng.Min == erng.Min {
 				r.removeSubInterval(sub, erng)
 				r.removeIntervalSub(erng, sub)
-				r.remove(Range{erng.Max + 1, rng.Max}, sub)
-				return
+				r.remove(Range{erng.Max + 1, rng.Max}, sub, true)
+				break
 			}
 			nrng := r.Split(erng, erng.Max, rng.Min-1, erng.Min, true)
 			r.removeSubInterval(sub, nrng)
 			r.removeIntervalSub(nrng, sub)
-			r.remove(Range{erng.Max + 1, rng.Max}, sub)
-			return
+			r.remove(Range{nrng.Max + 1, rng.Max}, sub, true)
+			break
 		}
 
 		// {xxxx[xxxx}==============]
-		if rng.Max >= erng.Min && rng.Max <= erng.Max && rng.Min < erng.Min {
+		if rng.Max >= erng.Min && rng.Max <= erng.Max && rng.Min <= erng.Min {
 			if rng.Max == erng.Max {
 				r.removeSubInterval(sub, erng)
 				r.removeIntervalSub(erng, sub)
-				r.remove(Range{rng.Min, erng.Min - 1}, sub)
-				return
+				r.remove(Range{rng.Min, erng.Min - 1}, sub, true)
+				break
 			}
 			nrng := r.Split(erng, erng.Max, rng.Max, erng.Min, false)
 			r.removeSubInterval(sub, nrng)
 			r.removeIntervalSub(nrng, sub)
-			r.remove(Range{rng.Min, erng.Min - 1}, sub)
+			r.remove(Range{rng.Min, erng.Min - 1}, sub, true)
+			break
+		}
+	}
+
+	// To ensure efficiency upstream, we must send precisely which intervals have gone silent
+	if !nested {
+		var emptyRanges, finalRanges []Range
+		for erng, sublist := range r.intervals {
+			if rng.Min <= erng.Min && rng.Max >= erng.Max { // Interval is within the range
+				if len(sublist) == 0 {
+					emptyRanges = append(emptyRanges, erng)
+					delete(r.intervals, erng)
+				}
+			}
+		}
+		if len(emptyRanges) == 0 {
 			return
+		}
+
+		// Sort list of ranges to be joined
+		sort.Slice(emptyRanges, func(i, j int) bool {
+			return emptyRanges[i].Min < emptyRanges[j].Min
+		})
+		// Go through the list and join where possible
+		if len(emptyRanges) > 1 {
+			for n := 0; n < len(emptyRanges); {
+				nrng := emptyRanges[n]
+				for n != len(emptyRanges)-1 && emptyRanges[n+1].Min == nrng.Max+1 {
+					nrng.Max = emptyRanges[n+1].Max
+					n++
+					if n == len(emptyRanges)-1 {
+						break
+					}
+				}
+
+				finalRanges = append(finalRanges, nrng)
+				n++
+			}
+		} else {
+			finalRanges = append(finalRanges, emptyRanges[0])
+		}
+
+		// Send out final calculated ranges
+		for _, erng := range finalRanges {
+			MD.RemoveRange(erng.Min, erng.Max)
 		}
 	}
 }
@@ -387,7 +431,9 @@ func (c *ChannelMap) UnsubscribeChannel(p *Subscriber, ch Channel_t) {
 
 func (c *ChannelMap) UnsubscribeAll(p *Subscriber) {
 	if len(p.ranges) > 0 {
-		c.UnsubscribeRange(p, Range{0, CHANNEL_MAX})
+		for _, rng := range p.ranges {
+			c.UnsubscribeRange(p, rng)
+		}
 	}
 
 	for _, ch := range p.channels {
