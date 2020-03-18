@@ -1,17 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="f6337163-8d31-42cb-a1f0-0625bad660b3" name="Default" comment="">
-      <change afterPath="$PROJECT_DIR$/messagedirector/md_oldtest.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+    <list default="true" id="f6337163-8d31-42cb-a1f0-0625bad660b3" name="Default" comment="MD: finish MD">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messagedirector/md_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/messagedirector/md_test.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/messagedirector/channelmap_test.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/messagedirector/participant.go" beforeDir="false" afterPath="$PROJECT_DIR$/messagedirector/participant.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/messagedirector/upstream_test.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/stateserver/distributedobject.go" beforeDir="false" afterPath="$PROJECT_DIR$/stateserver/distributedobject.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/stateserver/stateserver.go" beforeDir="false" afterPath="$PROJECT_DIR$/stateserver/stateserver.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/util/msgtypes.go" beforeDir="false" afterPath="$PROJECT_DIR$/util/msgtypes.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="CoverageViewManager">
+    <option name="myElementSize" value="374" />
   </component>
   <component name="DatabaseView">
     <option name="SHOW_INTERMEDIATE" value="true" />
@@ -40,7 +45,6 @@
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="GoLibraries">
-    <option name="indexEntireGoPath" value="false" />
     <option name="urls">
       <list>
         <option value="file://$PROJECT_DIR$" />
@@ -75,15 +79,15 @@
     <property name="nodejs_interpreter_path.stuck_in_default_project" value="undefined stuck path" />
     <property name="nodejs_npm_path_reset_for_default_project" value="true" />
     <property name="nodejs_package_manager_path" value="npm" />
-    <property name="settings.editor.selected.configurable" value="preferences.sourceCode.Go" />
+    <property name="settings.editor.selected.configurable" value="coverage" />
   </component>
   <component name="RecentsManager">
-    <key name="CopyFile.RECENT_KEYS">
-      <recent name="C:\Users\346115\GolandProjects\src\astrongo\util" />
-    </key>
     <key name="MoveFile.RECENT_KEYS">
       <recent name="C:\Users\liamm\go\src\astrongo\testing" />
       <recent name="C:\Users\liamm\go\src\astrongo\dclass\parse" />
+    </key>
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\346115\GolandProjects\src\astrongo\util" />
     </key>
   </component>
   <component name="RunManager" selected="Go Test.MD">
@@ -221,41 +225,45 @@
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
     <state x="686" y="188" key="#TestMD_Ranges_in_astrongo/messagedirector/1920.1.1920.1040/0.0.1920.1040@0.0.1920.1040" timestamp="1584412871742" />
-    <state x="414" y="178" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1584324752514">
+    <state x="414" y="178" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1584492524927">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
-    <state x="414" y="178" key="#com.intellij.execution.impl.EditConfigurationsDialog/1920.1.1920.1040/0.0.1920.1040@0.0.1920.1040" timestamp="1584324752514" />
+    <state x="414" y="178" key="#com.intellij.execution.impl.EditConfigurationsDialog/1920.1.1920.1040/0.0.1920.1040@0.0.1920.1040" timestamp="1584492524927" />
     <state x="1129" y="223" key="#xdebugger.evaluate" timestamp="1584408001963">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
     <state x="1129" y="223" key="#xdebugger.evaluate/1920.1.1920.1040/0.0.1920.1040@0.0.1920.1040" timestamp="1584408001963" />
-    <state x="627" y="118" key="CommitChangelistDialog2" timestamp="1584491640417">
+    <state x="627" y="118" key="CommitChangelistDialog2" timestamp="1584491669089">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
-    <state x="627" y="118" key="CommitChangelistDialog2/1920.1.1920.1040/0.0.1920.1040@0.0.1920.1040" timestamp="1584491640417" />
+    <state x="627" y="118" key="CommitChangelistDialog2/1920.1.1920.1040/0.0.1920.1040@0.0.1920.1040" timestamp="1584491669089" />
+    <state x="184" y="86" key="DiffContextDialog" timestamp="1584491685484">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state x="184" y="86" key="DiffContextDialog/1920.1.1920.1040/0.0.1920.1040@0.0.1920.1040" timestamp="1584491685484" />
     <state x="740" y="264" key="FileChooserDialogImpl" timestamp="1584294929477">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
     <state x="740" y="264" key="FileChooserDialogImpl/1920.1.1920.1040/0.0.1920.1040@0.0.1920.1040" timestamp="1584294929477" />
-    <state width="1877" height="174" key="GridCell.Tab.0.bottom" timestamp="1584483088674">
+    <state width="1877" height="174" key="GridCell.Tab.0.bottom" timestamp="1584492728210">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
-    <state width="1877" height="174" key="GridCell.Tab.0.bottom/1920.1.1920.1040/0.0.1920.1040@0.0.1920.1040" timestamp="1584483088674" />
+    <state width="1877" height="174" key="GridCell.Tab.0.bottom/1920.1.1920.1040/0.0.1920.1040@0.0.1920.1040" timestamp="1584492728210" />
     <state width="1877" height="174" key="GridCell.Tab.0.bottom/1920.1.1920.1040/0.0.1920.1040@1920.1.1920.1040" timestamp="1584409967479" />
-    <state width="1877" height="174" key="GridCell.Tab.0.center" timestamp="1584483088673">
+    <state width="1877" height="174" key="GridCell.Tab.0.center" timestamp="1584492728210">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
-    <state width="1877" height="174" key="GridCell.Tab.0.center/1920.1.1920.1040/0.0.1920.1040@0.0.1920.1040" timestamp="1584483088673" />
+    <state width="1877" height="174" key="GridCell.Tab.0.center/1920.1.1920.1040/0.0.1920.1040@0.0.1920.1040" timestamp="1584492728210" />
     <state width="1877" height="174" key="GridCell.Tab.0.center/1920.1.1920.1040/0.0.1920.1040@1920.1.1920.1040" timestamp="1584409967479" />
-    <state width="1877" height="174" key="GridCell.Tab.0.left" timestamp="1584483088673">
+    <state width="1877" height="174" key="GridCell.Tab.0.left" timestamp="1584492728210">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
-    <state width="1877" height="174" key="GridCell.Tab.0.left/1920.1.1920.1040/0.0.1920.1040@0.0.1920.1040" timestamp="1584483088673" />
+    <state width="1877" height="174" key="GridCell.Tab.0.left/1920.1.1920.1040/0.0.1920.1040@0.0.1920.1040" timestamp="1584492728210" />
     <state width="1877" height="174" key="GridCell.Tab.0.left/1920.1.1920.1040/0.0.1920.1040@1920.1.1920.1040" timestamp="1584409967479" />
-    <state width="1877" height="174" key="GridCell.Tab.0.right" timestamp="1584483088674">
+    <state width="1877" height="174" key="GridCell.Tab.0.right" timestamp="1584492728210">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
-    <state width="1877" height="174" key="GridCell.Tab.0.right/1920.1.1920.1040/0.0.1920.1040@0.0.1920.1040" timestamp="1584483088674" />
+    <state width="1877" height="174" key="GridCell.Tab.0.right/1920.1.1920.1040/0.0.1920.1040@0.0.1920.1040" timestamp="1584492728210" />
     <state width="1877" height="174" key="GridCell.Tab.0.right/1920.1.1920.1040/0.0.1920.1040@1920.1.1920.1040" timestamp="1584409967479" />
     <state width="1877" height="232" key="GridCell.Tab.1.bottom" timestamp="1584480160455">
       <screen x="0" y="0" width="1920" height="1040" />
@@ -277,14 +285,14 @@
     </state>
     <state width="1877" height="232" key="GridCell.Tab.1.right/1920.1.1920.1040/0.0.1920.1040@0.0.1920.1040" timestamp="1584480160455" />
     <state width="1877" height="348" key="GridCell.Tab.1.right/1920.1.1920.1040/0.0.1920.1040@1920.1.1920.1040" timestamp="1584409952092" />
-    <state x="921" y="132" key="SettingsEditor" timestamp="1584481853668">
+    <state x="331" y="187" key="SettingsEditor" timestamp="1584492313402">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
-    <state x="921" y="132" key="SettingsEditor/1920.1.1920.1040/0.0.1920.1040@0.0.1920.1040" timestamp="1584481853668" />
-    <state x="552" y="256" key="Vcs.Push.Dialog.v2" timestamp="1584491655511">
+    <state x="331" y="187" key="SettingsEditor/1920.1.1920.1040/0.0.1920.1040@0.0.1920.1040" timestamp="1584492313402" />
+    <state x="552" y="256" key="Vcs.Push.Dialog.v2" timestamp="1584491687682">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
-    <state x="552" y="256" key="Vcs.Push.Dialog.v2/1920.1.1920.1040/0.0.1920.1040@0.0.1920.1040" timestamp="1584491655511" />
+    <state x="552" y="256" key="Vcs.Push.Dialog.v2/1920.1.1920.1040/0.0.1920.1040@0.0.1920.1040" timestamp="1584491687682" />
     <state x="667" y="154" width="737" height="732" key="find.popup" timestamp="1584411728135">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
@@ -302,6 +310,8 @@
     </breakpoint-manager>
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/astrongo$TestMD_Ranges_in_astrongo_messagedirector.out" NAME="TestMD_Ranges in astrongo/messagedirector Coverage Results" MODIFIED="1584481096456" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="GoCoverage" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" />
+    <SUITE FILE_PATH="coverage/astrongo$TestMD_PostRemove_in_astrongo_messagedirector.out" NAME="TestMD_PostRemove in astrongo/messagedirector Coverage Results" MODIFIED="1584492323762" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="GoCoverage" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" />
+    <SUITE FILE_PATH="coverage/astrongo$TestMD_Ranges_in_astrongo_messagedirector.out" NAME="TestMD_Ranges in astrongo/messagedirector Coverage Results" MODIFIED="1584492533356" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="GoCoverage" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" />
+    <SUITE FILE_PATH="coverage/astrongo$MD.out" NAME="MD Coverage Results" MODIFIED="1584492565869" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="GoCoverage" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" />
   </component>
 </project>

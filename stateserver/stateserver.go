@@ -50,13 +50,38 @@ func (s *StateServer) handleGenerate(dgi *DatagramIterator, other bool) {
 		s.log.Errorf("Received create for unknown dclass id %d", dc)
 		return
 	}
+
+	obj := NewDistributedObject(s, do, parent, zone, dclass, dgi, other)
+	s.objects[do] = obj
 }
 
 func (s *StateServer) handleDelete(dgi *DatagramIterator, sender Channel_t) {
+	var targets []Channel_t
+	ai := dgi.ReadChannel()
 
+	for do, obj := range s.objects {
+		if obj.aiChannel == ai && obj.explicitAi {
+			targets = append(targets, Channel_t(do))
+		}
+	}
+
+	if len(targets) > 0 {
+		dg := NewDatagram()
+		dg.AddMultipleServerHeader(targets, sender, STATESERVER_DELETE_AI_OBJECTS)
+		dg.AddChannel(ai)
+		s.RouteDatagram(dg)
+	}
 }
 
 func (s *StateServer) ReceiveDatagram(dg Datagram) {
+	defer func() {
+		if r := recover(); r != nil {
+			if _, ok := r.(DatagramIteratorEOF); ok {
+				s.log.Errorf("Received truncated datagram")
+			}
+		}
+	}()
+
 	dgi := NewDatagramIterator(&dg)
 	sender := dgi.ReadChannel()
 	msgType := dgi.ReadUint16()

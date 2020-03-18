@@ -567,18 +567,196 @@ func (d *DistributedObject) HandleDatagram(dg Datagram, dgi *DatagramIterator) {
 		zone := dgi.ReadZone()
 		if parent != d.parent {
 			d.log.Debugf("Received location acknowledgement from %d but my parent is %d!", parent, d.parent)
+		} else if zone != d.zone {
+			d.log.Debugf("Received location acknowledgement for zone %d but my zone is %d!", zone, d.zone)
+		} else {
+			d.log.Debugf("Parent acknowledged my location change!")
+			d.parentSynchronized = true
 		}
 	case STATESERVER_OBJECT_SET_LOCATION:
+		newParent := dgi.ReadDoid()
+		newZone := dgi.ReadZone()
+		d.log.Debugf("Updating location; parent=%d, zone=%d", newParent, newZone)
+
+		d.handleLocationChange(newParent, newZone, sender)
 	case STATESERVER_OBJECT_GET_LOCATION:
+		context := dgi.ReadUint32()
+
+		dg := NewDatagram()
+		dg.AddServerHeader(sender, Channel_t(d.do), STATESERVER_OBJECT_GET_LOCATION_RESP)
+		dg.AddUint32(context)
+		dg.AddDoid(d.do)
+		dg.AddLocation(d.parent, d.zone)
+		d.RouteDatagram(dg)
 	case STATESERVER_OBJECT_GET_LOCATION_RESP:
+		if dgi.ReadUint32() != STATESERVER_CONTEXT_WAKE_CHILDREN {
+			d.log.Warnf("Received unexpected GET_LOCATION_RESP from %d", dgi.ReadUint32())
+			return
+		}
+
+		do := dgi.ReadUint32()
+		parent := dgi.ReadDoid()
+		zone := dgi.ReadZone()
+
+		if parent == d.do {
+			d.zoneObjects[zone] = append(d.zoneObjects[zone], Doid_t(do))
+		}
 	case STATESERVER_OBJECT_GET_ALL:
+		context := dgi.ReadUint32()
+		if dgi.ReadDoid() != d.do {
+			return
+		}
+
+		dg = NewDatagram()
+		dg.AddUint32(context)
+		d.appendRequiredData(dg, false, false)
+		d.appendOtherData(dg, false, false)
+		d.RouteDatagram(dg)
 	case STATESERVER_OBJECT_GET_FIELD:
+		context := dgi.ReadUint32()
+		if dgi.ReadDoid() != d.do {
+			return
+		}
+
+		fieldId := dgi.ReadUint16()
+		field := NewDatagram()
+		success := d.handleOneGet(&field, fieldId, false, false)
+
+		dg := NewDatagram()
+		dg.AddServerHeader(sender, Channel_t(d.do), STATESERVER_OBJECT_GET_FIELD_RESP)
+		dg.AddUint32(context)
+		dg.AddBool(success)
+		if success {
+			dg.AddDatagram(&field)
+		}
+		d.RouteDatagram(dg)
 	case STATESERVER_OBJECT_GET_FIELDS:
+		context := dgi.ReadUint32()
+		if dgi.ReadDoid() != d.do {
+			return
+		}
+		fieldCount := dgi.ReadUint16()
+
+		requestedFields := make(map[uint16]bool)
+		for n := 0; n < int(fieldCount); n++ {
+			fieldId := dgi.ReadUint16()
+			requestedFields[fieldId] = true
+		}
+
+		success, found, fields := true, 0, NewDatagram()
+		for fieldId, _ := range requestedFields {
+			sz := fields.Len()
+			if !d.handleOneGet(&fields, fieldId, true, false) {
+				success = false
+				break
+			}
+			if fields.Len() > sz {
+				found++
+			}
+		}
+
+		dg := NewDatagram()
+		dg.AddServerHeader(sender, Channel_t(d.do), STATESERVER_OBJECT_GET_FIELDS_RESP)
+		dg.AddUint32(context)
+		dg.AddBool(success)
+		if success {
+			dg.AddUint16(uint16(found))
+			dg.AddDatagram(&fields)
+		}
+		d.RouteDatagram(dg)
 	case STATESERVER_OBJECT_SET_OWNER:
+		newOwner := dgi.ReadChannel()
+		if newOwner == d.ownerChannel {
+			d.log.Debugf("Received owner change, but owner is the same.")
+			return
+		} else {
+			d.log.Debugf("Owner changing to %d!", newOwner)
+		}
+
+		if d.ownerChannel != INVALID_CHANNEL {
+			dg := NewDatagram()
+			dg.AddServerHeader(d.ownerChannel, sender, STATESERVER_OBJECT_CHANGING_OWNER)
+			dg.AddDoid(d.do)
+			dg.AddChannel(newOwner)
+			dg.AddChannel(d.ownerChannel)
+			d.RouteDatagram(dg)
+		}
+
+		d.ownerChannel = newOwner
+
+		if newOwner != INVALID_CHANNEL {
+			d.sendOwnerEntry(newOwner)
+		}
 	case STATESERVER_OBJECT_GET_ZONE_OBJECTS:
 		fallthrough
 	case STATESERVER_OBJECT_GET_ZONES_OBJECTS:
+		context := dgi.ReadUint32()
+		queriedParent := dgi.ReadDoid()
+
+		d.log.Debugf("Handling GET_ZONES_OBJECTS; queried parent=%d, id=%d, parent=%d", queriedParent, d.do, d.parent)
+
+		zoneCount := 1
+		if msgType == STATESERVER_OBJECT_GET_ZONES_OBJECTS {
+			zoneCount = int(dgi.ReadUint16())
+		}
+
+		if queriedParent == d.parent {
+			// Query was relayed from our parent
+			for n := 0; n < zoneCount; n++ {
+				if dgi.ReadZone() == d.zone {
+					// If you're actually reading through this code, please look through
+					//  the comments in Astron C++ to understand what is going on; most of
+					//  this code is a transposition of Astron C++.
+					if d.parentSynchronized {
+						d.sendInterestEntry(sender, context)
+					} else {
+						d.sendLocationEntry(sender)
+					}
+					break
+				}
+			}
+		} else if queriedParent == d.do {
+			childCount := 0
+
+			dg := NewDatagram()
+			dg.AddServerHeader(ParentToChildren(d.do), Channel_t(sender), STATESERVER_OBJECT_GET_ZONES_OBJECTS)
+			dg.AddUint32(context)
+			dg.AddDoid(queriedParent)
+			dg.AddUint16(uint16(zoneCount))
+
+			for n := 0; n < zoneCount; n++ {
+				zone := dgi.ReadZone()
+				childCount += len(d.zoneObjects[zone])
+				dg.AddZone(zone)
+			}
+
+			countDg := NewDatagram()
+			countDg.AddUint32(context)
+			countDg.AddDoid(Doid_t(childCount))
+			d.RouteDatagram(countDg)
+
+			if childCount > 0 {
+				d.RouteDatagram(dg)
+			}
+		}
 	case STATESERVER_GET_ACTIVE_ZONES:
+		var zones []Zone_t
+		context := dgi.ReadUint32()
+
+		for zone, _ := range d.zoneObjects {
+			zones = append(zones, zone)
+		}
+
+		dg := NewDatagram()
+		dg.AddServerHeader(sender, Channel_t(d.do), STATESERVER_GET_ACTIVE_ZONES_RESP)
+		dg.AddUint32(context)
+		dg.AddUint16(uint16(len(zones)))
+
+		for _, zone := range zones {
+			dg.AddZone(zone)
+		}
+
+		d.RouteDatagram(dg)
 	default:
 		if msgType < STATESERVER_MSGTYPE_MIN || msgType > STATESERVER_MSGTYPE_MAX {
 			d.log.Warnf("Recieved unknown message of type %d.", msgType)

@@ -3,7 +3,9 @@ package messagedirector
 import (
 	"astrongo/net"
 	. "astrongo/util"
+	"errors"
 	gonet "net"
+	"sync"
 	"time"
 )
 
@@ -31,6 +33,8 @@ type MDParticipantBase struct {
 
 	name string
 	url  string
+
+	mu sync.Mutex
 }
 
 func (m *MDParticipantBase) Init() {
@@ -61,11 +65,17 @@ func (m *MDParticipantBase) PostRemove() {
 }
 
 func (m *MDParticipantBase) AddPostRemove(ch Channel_t, dg Datagram) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	m.postRemoves[ch] = append(m.postRemoves[ch], dg)
 	MD.PreroutePostRemove(ch, dg)
 }
 
 func (m *MDParticipantBase) ClearPostRemoves(ch Channel_t) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	delete(m.postRemoves, ch)
 	MD.RecallPostRemoves(ch)
 }
@@ -91,6 +101,9 @@ func (m *MDParticipantBase) Name() string {
 }
 
 func (m *MDParticipantBase) Cleanup() {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	m.PostRemove()
 	channelMap.UnsubscribeAll(m.subscriber)
 
@@ -128,13 +141,13 @@ func (m *MDNetworkParticipant) HandleDatagram(dg Datagram, dgi *DatagramIterator
 
 func (m *MDNetworkParticipant) ReceiveDatagram(dg Datagram) {
 	defer func() {
-		/*if r := recover(); r != nil {
+		if r := recover(); r != nil {
 			if _, ok := r.(DatagramIteratorEOF); ok {
 				m.Terminate(errors.New("MDNetworkParticipant received a truncated datagram"))
 			} else {
 				m.Terminate(r.(error))
 			}
-		}*/
+		}
 	}()
 
 	dgi := NewDatagramIterator(&dg)
