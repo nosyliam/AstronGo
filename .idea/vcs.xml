@@ -4,5 +4,9 @@
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/src/github.com/derekparker/delve" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/src/github.com/go-delve/delve" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/src/github.com/jehiah/go-strftime" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/src/github.com/tj/assert" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/src/github.com/vmihailenco/msgpack" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/src/github.com/vmihailenco/tagparser" vcs="Git" />
   </component>
 </project>

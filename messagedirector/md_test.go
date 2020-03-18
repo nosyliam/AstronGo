@@ -182,6 +182,8 @@ func TestMD_Multi(t *testing.T) {
 		client1.SendDatagram(*dg)
 		client2.SendDatagram(*dg)
 	}
+
+	time.Sleep(300 * time.Millisecond)
 }
 
 func TestMD_PostRemove(t *testing.T) {
@@ -265,4 +267,331 @@ func TestMD_PostRemove(t *testing.T) {
 
 	mainClient.ExpectMany(t, expected, false, true)
 	mainClient.ExpectNone(t)
+}
+
+func TestMD_Ranges(t *testing.T) {
+	mainClient.Flush()
+	client1.Flush()
+	client2.Flush()
+
+	// If we don't lower the message receive timeouts this test will take forever
+	mainClient.Timeout = 50
+	client1.Timeout = 50
+	client2.Timeout = 50
+
+	// Subscribe to range 1000 - 1999
+	dg := (&TestDatagram{}).CreateAddRange(1000, 1999)
+	client1.SendDatagram(*dg)
+	// Upstream should receive the range as well
+	mainClient.Expect(t, *dg, false)
+
+	checkChannels := func(channels map[Channel_t]bool) {
+		for channel, shouldReceive := range channels {
+			dg := (&TestDatagram{}).Create([]Channel_t{channel}, 1337, 6969)
+			dg.AddUint16(uint16(channel))
+			client2.SendDatagram(*dg)
+
+			if shouldReceive {
+				//fmt.Printf("Checking chan %d\n", channel)
+				client1.Expect(t, *dg, false)
+				client1.ExpectNone(t)
+			} else {
+				//fmt.Printf("Checking chan %d\n", channel)
+				client1.ExpectNone(t)
+			}
+
+			mainClient.Expect(t, *dg, false)
+		}
+	}
+
+	checkChannels(map[Channel_t]bool{
+		500:  false,
+		999:  false,
+		1000: true,
+		1500: true,
+		1999: true,
+		2000: false,
+		2050: false,
+	})
+
+	// Range subscriptions should still only receive messages once
+	dg = (&TestDatagram{}).Create([]Channel_t{500, 1001, 1500}, 1337, 6969)
+	dg.AddString("nosyliam is epic #2")
+	client2.SendDatagram(*dg)
+	client1.Expect(t, *dg, false)
+	client1.ExpectNone(t)
+	mainClient.Expect(t, *dg, false)
+
+	// Slice the range
+	dg = (&TestDatagram{}).CreateRemoveRange(1300, 1700)
+	client1.SendDatagram(*dg)
+	mainClient.Expect(t, *dg, false)
+
+	checkChannels(map[Channel_t]bool{
+		500:  false,
+		999:  false,
+		1000: true,
+		1299: true,
+		1300: false,
+		1500: false,
+		1699: false,
+		1700: false,
+		1701: true,
+		1800: true,
+	})
+
+	dg = (&TestDatagram{}).CreateAddRange(1900, 2100)
+	client1.SendDatagram(*dg)
+	mainClient.Expect(t, *dg, false)
+
+	checkChannels(map[Channel_t]bool{
+		500:  false,
+		999:  false,
+		1000: true,
+		1300: false,
+		1500: false,
+		1699: false,
+		1700: false,
+		1701: true,
+		1900: true,
+		1999: true,
+		2000: true,
+		2050: true,
+		2101: false,
+	})
+
+	// This behavior differs from Astron C++ as ranges in
+	//  AstronGo are cleaned up after each removal operation
+	dg = (&TestDatagram{}).CreateRemoveRange(1000, 1999)
+	client1.SendDatagram(*dg)
+	mainClient.ExpectMany(t, []Datagram{
+		*(&TestDatagram{}).CreateRemoveRange(1000, 1299),
+		*(&TestDatagram{}).CreateRemoveRange(1701, 1999),
+	}, false, false)
+
+	checkChannels(map[Channel_t]bool{
+		500:  false,
+		999:  false,
+		1000: false,
+		1001: false,
+		1999: false,
+		2000: true,
+		2050: true,
+		2500: false,
+	})
+
+	// When client one dies, it's last remaining range should die
+	client1.Close()
+	client1 = (&TestMDConnection{}).Connect(":57123", "client #1")
+	mainClient.Expect(t, *(&TestDatagram{}).CreateRemoveRange(2000, 2100), false)
+	mainClient.ExpectNone(t)
+
+	// Set up a new range
+	dg = (&TestDatagram{}).CreateAddRange(3000, 5000)
+	client1.SendDatagram(*dg)
+	// Upstream should receive the range as well
+	mainClient.Expect(t, *dg, false)
+
+	checkChannels(map[Channel_t]bool{
+		2999: false,
+		3000: true,
+		4999: true,
+		5000: true,
+		5001: false,
+	})
+
+	// Remove a range that intersects with the front part
+	dg = (&TestDatagram{}).CreateRemoveRange(2950, 3043)
+	client1.SendDatagram(*dg)
+	// Only the subscribed part should be removed upstream
+	mainClient.Expect(t, *(&TestDatagram{}).CreateRemoveRange(3000, 3043), false)
+
+	checkChannels(map[Channel_t]bool{
+		2999: false,
+		3000: false,
+		3043: false,
+		3044: true,
+		4000: true,
+		5000: true,
+	})
+
+	// Remove a range that intersects with the end part
+	dg = (&TestDatagram{}).CreateRemoveRange(4763, 6000)
+	client1.SendDatagram(*dg)
+	mainClient.Expect(t, *(&TestDatagram{}).CreateRemoveRange(4763, 5000), false)
+
+	checkChannels(map[Channel_t]bool{
+		2999: false,
+		3000: false,
+		3043: false,
+		3044: true,
+		4000: true,
+		4762: true,
+		4763: false,
+		5000: false,
+	})
+
+	// Remove a range in the middle
+	dg = (&TestDatagram{}).CreateRemoveRange(3951, 4049)
+	client1.SendDatagram(*dg)
+	mainClient.Expect(t, *dg, false)
+
+	checkChannels(map[Channel_t]bool{
+		3043: false,
+		3044: true,
+		3802: true,
+		3950: true,
+		3951: false,
+		4049: false,
+		4050: true,
+		4763: false,
+	})
+
+	// Remove an intersection from the lower half
+	dg = (&TestDatagram{}).CreateRemoveRange(4030, 4070)
+	client1.SendDatagram(*dg)
+	mainClient.Expect(t, *(&TestDatagram{}).CreateRemoveRange(4050, 4070), false)
+
+	checkChannels(map[Channel_t]bool{
+		3044: true,
+		3802: true,
+		3950: true,
+		3951: false,
+		4070: false,
+		4133: true,
+		4762: true,
+		4763: false,
+	})
+
+	// Remove an intersection from the upper half
+	dg = (&TestDatagram{}).CreateRemoveRange(3891, 4040)
+	client1.SendDatagram(*dg)
+	mainClient.Expect(t, *(&TestDatagram{}).CreateRemoveRange(3891, 3950), false)
+
+	checkChannels(map[Channel_t]bool{
+		3043: false,
+		3044: true,
+		3890: true,
+		3891: false,
+		3893: false,
+		4071: true,
+		4762: true,
+		4763: false,
+	})
+
+	// Remove an intersection of the upper and lower range
+	dg = (&TestDatagram{}).CreateRemoveRange(3700, 4200)
+	client1.SendDatagram(*dg)
+	mainClient.ExpectMany(t, []Datagram{*(&TestDatagram{}).CreateRemoveRange(3700, 3890),
+		*(&TestDatagram{}).CreateRemoveRange(4071, 4200)}, false, true)
+
+	checkChannels(map[Channel_t]bool{
+		3043: false,
+		3044: true,
+		3699: true,
+		3700: false,
+		4200: false,
+		4201: true,
+		4762: true,
+		4763: false,
+	})
+
+	// Introduce the second client to an intersecting range
+	dg = (&TestDatagram{}).CreateAddRange(3500, 4500)
+	client2.SendDatagram(*dg)
+	mainClient.Expect(t, *dg, false)
+
+	// Remove an upper part of the lower range
+	dg = (&TestDatagram{}).CreateRemoveRange(3650, 3800)
+	client1.SendDatagram(*dg)
+	mainClient.ExpectNone(t)
+
+	checkChannels(map[Channel_t]bool{
+		// Lower range
+		3043: false,
+		3044: true, // Lower bound
+		3649: true, // Upper bound
+		3650: false,
+
+		3787: false,
+		4000: false,
+
+		// Upper range
+		4200: false,
+		4201: true, // Lower bound
+	})
+
+	// Do some even more complicated stuff (see Astron C++'s unit tests)
+	dg = (&TestDatagram{}).CreateRemoveRange(3475, 3525)
+	client1.SendDatagram(*dg)
+	mainClient.Expect(t, *(&TestDatagram{}).CreateRemoveRange(3475, 3499), false)
+
+	checkChannels(map[Channel_t]bool{
+		// Lower range
+		3043: false,
+		3044: true, // Lower bound
+		3474: true, // Upper bound
+		3475: false,
+
+		3483: false,
+		3499: false,
+
+		// Mid range
+		3525: false,
+		3526: true, // Lower bound
+		3600: true,
+		3649: true,
+		3650: false,
+
+		// Upper range
+		4200: false,
+		4201: true, // Lower bound
+	})
+
+	// Do the last, most complicated thing!
+	dg = (&TestDatagram{}).CreateRemoveRange(3620, 4300)
+	client2.SendDatagram(*dg)
+	mainClient.Expect(t, *(&TestDatagram{}).CreateRemoveRange(3650, 4200), false)
+
+	checkChannels(map[Channel_t]bool{
+		// Lower range
+		3474: true, // Upper bound
+		3475: false,
+
+		// Mid range
+		3525: false,
+		3526: true, // Lower bound
+		3649: true, // Upper bound
+		3650: false,
+
+		// Upper range
+		4200: false,
+		4201: true, // Lower bound
+		4762: true, // Upper bound
+		4763: false,
+	})
+
+	client2.Close()
+	client2 = (&TestMDConnection{}).Connect(":57123", "client #2")
+	mainClient.Expect(t, *(&TestDatagram{}).CreateRemoveRange(3500, 3525), false)
+	mainClient.ExpectNone(t)
+
+	dg = (&TestDatagram{}).CreateAddRange(1000, 5000)
+	client2.SendDatagram(*dg)
+	mainClient.Expect(t, *dg, false)
+
+	client2.SendDatagram(*(&TestDatagram{}).CreateRemoveRange(1000, 5000))
+	mainClient.ExpectMany(t, []Datagram{
+		*(&TestDatagram{}).CreateRemoveRange(1000, 3043),
+		*(&TestDatagram{}).CreateRemoveRange(3475, 3525),
+		*(&TestDatagram{}).CreateRemoveRange(3650, 4200),
+		*(&TestDatagram{}).CreateRemoveRange(4763, 5000),
+	}, false, false)
+
+	// Now we have a fully functional MD!
+	client1.Close()
+	client2.Close()
+	mainClient.Close()
+
+	return
 }
