@@ -14,6 +14,7 @@ type Field interface {
 	Name() string
 	Id() uint
 	Keywords() KeywordList
+	HasKeyword(string) bool
 	SetId(uint)
 
 	SetParentStruct(*Struct)
@@ -43,6 +44,9 @@ func (f *BaseField) Name() string          { return f.name }
 func (f *BaseField) Id() uint              { return f.id }
 func (f *BaseField) Keywords() KeywordList { return f.KeywordList }
 func (f *BaseField) SetId(id uint)         { f.id = id }
+func (f *BaseField) HasKeyword(kw string) bool {
+	return f.KeywordList.HasKeyword(kw)
+}
 
 func (f *BaseField) SetParentStruct(s *Struct) { f.parentStruct = s }
 func (f *BaseField) ParentStruct() *Struct     { return f.parentStruct }

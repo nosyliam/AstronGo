@@ -24,7 +24,8 @@ func NewStateServer(config core.Role) *StateServer {
 			"name": fmt.Sprintf("StateServer (%d)", config.Control),
 		}),
 	}
-	ss.Init()
+
+	ss.Init(ss)
 
 	if Channel_t(config.Control) != INVALID_CHANNEL {
 		ss.SubscribeChannel(Channel_t(config.Control))
@@ -73,16 +74,15 @@ func (s *StateServer) handleDelete(dgi *DatagramIterator, sender Channel_t) {
 	}
 }
 
-func (s *StateServer) ReceiveDatagram(dg Datagram) {
-	defer func() {
-		if r := recover(); r != nil {
+func (s *StateServer) HandleDatagram(dg Datagram, dgi *DatagramIterator) {
+	/*defer func() {
+		if r  := recover(); r != nil {
 			if _, ok := r.(DatagramIteratorEOF); ok {
 				s.log.Errorf("Received truncated datagram")
 			}
 		}
-	}()
+	}()*/
 
-	dgi := NewDatagramIterator(&dg)
 	sender := dgi.ReadChannel()
 	msgType := dgi.ReadUint16()
 
@@ -94,6 +94,13 @@ func (s *StateServer) ReceiveDatagram(dg Datagram) {
 	case STATESERVER_DELETE_AI_OBJECTS:
 		s.handleDelete(dgi, sender)
 	default:
-		s.log.Warnf("Received unknown msgtype=%d", msgType)
+		fmt.Printf("Received message\n")
+		//s.log.Warnf("Received unknown msgtype=%d", msgType)
 	}
+}
+
+func (s *StateServer) ReceiveDatagram(dg Datagram) {}
+
+func (s *StateServer) Terminate(err error) {
+
 }

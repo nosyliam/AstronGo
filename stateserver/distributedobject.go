@@ -5,13 +5,16 @@ import (
 	"astrongo/messagedirector"
 	. "astrongo/util"
 	"bytes"
+	"encoding/hex"
 	"fmt"
 	"github.com/apex/log"
+	"sync"
 )
 
 type FieldValues map[dc.Field][]uint8
 
 type DistributedObject struct {
+	sync.Mutex
 	messagedirector.MDParticipantBase
 
 	log *log.Entry
@@ -42,8 +45,9 @@ func NewDistributedObject(ss *StateServer, doid Doid_t, parent Doid_t,
 	do := &DistributedObject{
 		stateserver:    ss,
 		do:             doid,
-		zone:           zone,
+		zone:           0,
 		dclass:         dclass,
+		zoneObjects:    make(map[Zone_t][]Doid_t),
 		requiredFields: make(map[dc.Field][]uint8),
 		ramFields:      make(map[dc.Field][]uint8),
 		log: log.WithFields(log.Fields{
@@ -51,9 +55,12 @@ func NewDistributedObject(ss *StateServer, doid Doid_t, parent Doid_t,
 		}),
 	}
 
+	do.Init(do)
+	do.SubscribeChannel(Channel_t(doid))
+
 	for i := 0; i < dclass.GetNumFields(); i++ {
 		field := dclass.GetField(i)
-		if field.Keywords().HasKeyword("required") {
+		if field.HasKeyword("required") {
 			if _, ok := field.(*dc.MolecularField); ok {
 				continue
 			}
@@ -72,7 +79,7 @@ func NewDistributedObject(ss *StateServer, doid Doid_t, parent Doid_t,
 				break
 			}
 
-			if field.Keywords().HasKeyword("ram") {
+			if field.HasKeyword("ram") {
 				do.ramFields[field] = dgi.UnpackFieldtoUint8(field)
 			} else {
 				do.log.Errorf("Received non-RAM field %s within an OTHER section!", field.Name())
@@ -82,12 +89,25 @@ func NewDistributedObject(ss *StateServer, doid Doid_t, parent Doid_t,
 		}
 	}
 
-	do.SubscribeChannel(Channel_t(doid))
 	do.log.Debug("Object instantiated ...")
+	fmt.Printf("Generated %d\n", doid)
 
 	dgi.SeekPayload()
 	do.handleLocationChange(parent, zone, dgi.ReadChannel())
 	do.wakeChildren()
+
+	// Replay datagrams we may have missed while generating
+	if dgs, ok := messagedirector.ReplayPool[Channel_t(doid)]; ok {
+		for _, dg := range dgs {
+			fmt.Printf("Replay dump:\n%s\n", hex.Dump(dg.Bytes()))
+			dgi := NewDatagramIterator(&dg)
+			dgi.SeekPayload()
+			go do.HandleDatagram(dg, dgi)
+		}
+	}
+	messagedirector.ReplayLock.Lock()
+	messagedirector.ReplayPool[Channel_t(doid)] = nil
+	messagedirector.ReplayLock.Unlock()
 
 	return do
 }
@@ -103,8 +123,8 @@ func (d *DistributedObject) appendRequiredData(dg Datagram, client bool, owner b
 			continue
 		}
 
-		if field.Keywords().HasKeyword("required") && (!client || field.Keywords().HasKeyword("broadcast") ||
-			field.Keywords().HasKeyword("clrecv") || (owner && field.Keywords().HasKeyword("ownrecv"))) {
+		if field.HasKeyword("required") && (!client || field.HasKeyword("broadcast") ||
+			field.HasKeyword("clrecv") || (owner && field.HasKeyword("ownrecv"))) {
 			dg.AddData(d.requiredFields[field])
 		}
 	}
@@ -114,8 +134,8 @@ func (d *DistributedObject) appendOtherData(dg Datagram, client bool, owner bool
 	if client {
 		var broadcastFields []dc.Field
 		for field, _ := range d.ramFields {
-			if field.Keywords().HasKeyword("broadcast") || field.Keywords().HasKeyword("clrecv") ||
-				(owner && field.Keywords().HasKeyword("ownrecv")) {
+			if field.HasKeyword("broadcast") || field.HasKeyword("clrecv") ||
+				(owner && field.HasKeyword("ownrecv")) {
 				broadcastFields = append(broadcastFields, field)
 			}
 		}
@@ -224,6 +244,7 @@ func (d *DistributedObject) handleLocationChange(parent Doid_t, zone Zone_t, sen
 			d.SubscribeChannel(ParentToChildren(parent))
 			if !d.explicitAi {
 				// Retrieve parent AI
+				fmt.Printf("Sending GET_AI\n")
 				dg := NewDatagram()
 				dg.AddServerHeader(Channel_t(parent), Channel_t(d.do), STATESERVER_OBJECT_GET_AI)
 				dg.AddUint32(d.context)
@@ -246,6 +267,7 @@ func (d *DistributedObject) handleLocationChange(parent Doid_t, zone Zone_t, sen
 	dg.AddDoid(d.do)
 	dg.AddLocation(parent, zone)
 	dg.AddLocation(oldParent, oldZone)
+	d.RouteDatagram(dg)
 
 	d.parentSynchronized = false
 
@@ -272,6 +294,7 @@ func (d *DistributedObject) handleAiChange(ai Channel_t, sender Channel_t, expli
 
 	d.aiChannel = ai
 	d.explicitAi = explicit
+	fmt.Printf("AI changed to %d\n", d.aiChannel)
 
 	dg := NewDatagram()
 	dg.AddMultipleServerHeader(targets, sender, STATESERVER_OBJECT_CHANGING_AI)
@@ -337,15 +360,15 @@ func (d *DistributedObject) wakeChildren() {
 }
 
 func (d *DistributedObject) saveField(field dc.Field, data []uint8) {
-	if field.Keywords().HasKeyword("required") {
+	if field.HasKeyword("required") {
 		d.requiredFields[field] = data
-	} else if field.Keywords().HasKeyword("ram") {
+	} else if field.HasKeyword("ram") {
 		d.ramFields[field] = data
 	}
 }
 
 func (d *DistributedObject) handleOneUpdate(dgi *DatagramIterator, sender Channel_t) bool {
-	var data *bytes.Buffer
+	var data bytes.Buffer
 	fieldId := dgi.ReadUint16()
 	field, ok := d.dclass.GetFieldById(uint(fieldId))
 	if !ok {
@@ -367,7 +390,7 @@ func (d *DistributedObject) handleOneUpdate(dgi *DatagramIterator, sender Channe
 			}
 		}()
 
-		dgi.UnpackField(field, data)
+		dgi.UnpackField(field, &data)
 		if molecular, ok := field.(*dc.MolecularField); ok {
 			dgi.Seek(fieldStart)
 			count := molecular.GetNumFields()
@@ -389,24 +412,25 @@ func (d *DistributedObject) handleOneUpdate(dgi *DatagramIterator, sender Channe
 	}
 
 	var targets []Channel_t
-	if field.Keywords().HasKeyword("broadcast") {
+	if field.HasKeyword("broadcast") {
 		targets = append(targets, LocationAsChannel(d.parent, d.zone))
 	}
 
-	if field.Keywords().HasKeyword("airecv") && d.aiChannel != INVALID_CHANNEL && d.aiChannel != sender {
+	if field.HasKeyword("airecv") && d.aiChannel != INVALID_CHANNEL && d.aiChannel != sender {
 		targets = append(targets, d.aiChannel)
 	}
 
-	if field.Keywords().HasKeyword("ownrecv") && d.ownerChannel != INVALID_CHANNEL && d.ownerChannel != sender {
+	if field.HasKeyword("ownrecv") && d.ownerChannel != INVALID_CHANNEL && d.ownerChannel != sender {
 		targets = append(targets, d.ownerChannel)
 	}
 
 	if len(targets) != 0 {
 		dg := NewDatagram()
-		dg.AddMultipleServerHeader(targets, sender, STATESERVER_OBJECT_GET_FIELD)
+		dg.AddMultipleServerHeader(targets, sender, STATESERVER_OBJECT_SET_FIELD)
 		dg.AddDoid(d.do)
 		dg.AddUint16(fieldId)
 		dg.AddData(data.Bytes())
+		d.RouteDatagram(dg)
 	}
 	return true
 }
@@ -448,6 +472,9 @@ func (d *DistributedObject) handleOneGet(out *Datagram, fieldId uint16, allowUns
 }
 
 func (d *DistributedObject) HandleDatagram(dg Datagram, dgi *DatagramIterator) {
+	d.Lock()
+	defer d.Unlock()
+
 	sender := dgi.ReadChannel()
 	msgType := dgi.ReadUint16()
 
@@ -458,20 +485,26 @@ func (d *DistributedObject) HandleDatagram(dg Datagram, dgi *DatagramIterator) {
 			return
 		}
 
-		d.annihilate(sender, false)
+		d.annihilate(sender, true)
 	case STATESERVER_OBJECT_DELETE_RAM:
 		if d.do != dgi.ReadDoid() {
 			break
 		}
 
-		d.annihilate(sender, false)
-	case STATESERVER_OBJECT_SET_FIELD:
+		d.annihilate(sender, true)
+	case STATESERVER_OBJECT_DELETE_CHILDREN:
 		do := dgi.ReadDoid()
 		if d.do == do {
 			d.deleteChildren(sender)
 		} else if do == d.parent {
 			d.annihilate(sender, false)
 		}
+	case STATESERVER_OBJECT_SET_FIELD:
+		if d.do != dgi.ReadDoid() {
+			break
+		}
+
+		d.handleOneUpdate(dgi, sender)
 	case STATESERVER_OBJECT_SET_FIELDS:
 		if d.do != dgi.ReadDoid() {
 			break
@@ -497,6 +530,7 @@ func (d *DistributedObject) HandleDatagram(dg Datagram, dgi *DatagramIterator) {
 	case STATESERVER_OBJECT_SET_AI:
 		newChannel := dgi.ReadChannel()
 		d.log.Debugf("Changing AI channel to %d", newChannel)
+		fmt.Printf("Received AI change request; chan=%d, sender=%d\n", newChannel, sender)
 		d.handleAiChange(newChannel, sender, false)
 	case STATESERVER_OBJECT_GET_AI:
 		d.log.Debugf("Received AI query from %d", sender)
@@ -577,7 +611,6 @@ func (d *DistributedObject) HandleDatagram(dg Datagram, dgi *DatagramIterator) {
 		newParent := dgi.ReadDoid()
 		newZone := dgi.ReadZone()
 		d.log.Debugf("Updating location; parent=%d, zone=%d", newParent, newZone)
-
 		d.handleLocationChange(newParent, newZone, sender)
 	case STATESERVER_OBJECT_GET_LOCATION:
 		context := dgi.ReadUint32()

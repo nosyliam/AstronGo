@@ -18,6 +18,7 @@ const (
 )
 
 const INVALID_DOID = Doid_t(0)
+const INVALID_ZONE = Zone_t(0)
 
 const (
 	INVALID_CHANNEL    = Channel_t(0)

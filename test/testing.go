@@ -14,8 +14,96 @@ import (
 	"time"
 )
 
-type LogSilencer struct {
-}
+const (
+	DistributedTestObject1 uint16 = iota
+	DistributedTestObject2
+	DistributedTestObject3
+	DistributedTestObject4
+	DistributedTestObject5
+	UberDog1
+	UberDog2
+	DistributedClientTestObject
+	Block
+	DistributedChunk
+	DistributedDBTypeTestObject
+)
+
+const (
+	// DistributedTestObject1
+	setRequired1 uint16 = iota
+	setB1
+	SetBA1
+	setBR1
+	setBRA1
+	setBRO1
+
+	// DistributedTestObject2
+	SetB2
+	setBRam2
+
+	// DistributedTestObject3
+	setDb3
+	setRDB3
+	setADb3
+
+	// DistributedTestObject4
+	setX
+	setY
+	setUnrelated
+	setZ
+	setXyz
+	setOne
+	setTwo
+	setThree
+	set123
+
+	// DistributedTestObject5
+	setRDbD5
+	setFoo
+
+	// UberDog1
+	request
+	response
+
+	// UberDog2
+	foo
+	bar
+
+	// DistributedClientTestObject
+	setName
+	setColor
+	requestKill
+	sendMessage
+	sendMessageConstraint
+	setColorConstraint
+
+	// Block
+	blockX
+	blockY
+	blockZ
+
+	// DistributedChunk
+	blockList
+	lastBlock
+	newBlock
+
+	// DistributedDBTypeTestObject
+	db_uint8
+	db_uint16
+	db_uint32
+	db_uint64
+	db_int8
+	db_int16
+	db_int32
+	db_int64
+	db_char
+	db_float64
+	db_string
+	db_fixstr
+	db_blob
+	db_fixblob
+	db_complex
+)
 
 type UpstreamHandler struct {
 	Server *gonet.Conn
@@ -95,11 +183,11 @@ func (d *TestDatagram) MatchesHeader(recipients []Channel_t, sender Channel_t, m
 	}
 
 	if d.Sender() != sender {
-		return false, fmt.Sprintf("Sender doesn't match, %d = %d (expected, actual)", sender, d.Sender())
+		return false, fmt.Sprintf("Sender doesn't match, %d != %d (expected, actual)", sender, d.Sender())
 	}
 
 	if d.MessageType() != msgType {
-		return false, fmt.Sprintf("Message type doesn't match, %d = %d (expected, actual)", msgType, d.MessageType())
+		return false, fmt.Sprintf("Message type doesn't match, %d != %d (expected, actual)", msgType, d.MessageType())
 	}
 
 	if payloadSz != -1 && len(d.Payload()) != payloadSz {
@@ -139,12 +227,14 @@ func (d *TestDatagram) AssertEquals(other *TestDatagram, t *testing.T, client bo
 	} else {
 		if channelsExpected, channelsReceived := d.ReadUint8(), other.ReadUint8(); channelsExpected != channelsReceived {
 			t.Errorf("Datagram assertion failed: channels expected, %d != %d", channelsExpected, channelsReceived)
+			fmt.Printf("Dump:\n%s", hex.Dump(other.Dg.Bytes()))
 			//return
 		}
 
 		expectedRecipients, recievedRecipients := d.Channels(), other.Channels()
 		if !reflect.DeepEqual(expectedRecipients, recievedRecipients) {
 			t.Errorf("Datagram assertion failed: recipients expected, %s != %s", expectedRecipients, recievedRecipients)
+			panic("")
 			return
 		}
 
@@ -382,7 +472,7 @@ type TestChannelConnection struct {
 	channels map[Channel_t]bool
 }
 
-func (c *TestChannelConnection) Create(addr string, name string, ch Channel_t) {
+func (c *TestChannelConnection) Create(addr string, name string, ch Channel_t) *TestChannelConnection {
 	c.TestMDConnection.Connect(addr, name)
 	c.channels = make(map[Channel_t]bool)
 
@@ -390,6 +480,8 @@ func (c *TestChannelConnection) Create(addr string, name string, ch Channel_t) {
 		c.channels[ch] = true
 		c.SendDatagram(*(&TestDatagram{}).CreateAddChannel(ch))
 	}
+
+	return c
 }
 
 func (c *TestChannelConnection) AddChannel(ch Channel_t) {
@@ -415,5 +507,5 @@ func (c *TestChannelConnection) ClearChannels() {
 
 func (c *TestChannelConnection) Close() {
 	c.ClearChannels()
-	c.Close()
+	c.TestMDConnection.Close()
 }

@@ -5,12 +5,15 @@ import (
 	"sort"
 	"sync"
 	"sync/atomic"
+	"time"
 )
 
 // TODO: Rewrite everything for efficiency
 
 var lock sync.Mutex
 var channelMap *ChannelMap
+var ReplayPool map[Channel_t][]Datagram
+var ReplayLock sync.Mutex
 
 type SubscriptionMap struct {
 	sync.Map
@@ -333,16 +336,37 @@ func (r *RangeMap) Send(ch Channel_t, data *MDDatagram) {
 
 	data.sendLock.Lock()
 
+	var found bool
 	for rng, subs := range r.intervals {
 		if rng.Min <= ch && rng.Max >= ch {
 			for _, sub := range subs {
-				if (data.sender == nil || sub.participant.Subscriber() != data.sender.Subscriber()) &&
-					!data.HasSent(sub.participant.Subscriber()) {
-					data.sent = append(data.sent, sub.participant.Subscriber())
-					go sub.participant.HandleDatagram(*data.dg.Dg, data.dg.Copy())
+				if data.sender == nil || sub.participant.Subscriber() != data.sender.Subscriber() {
+					found = true
+					if !data.HasSent(sub.participant.Subscriber()) {
+						data.sent = append(data.sent, sub.participant.Subscriber())
+						go sub.participant.HandleDatagram(*data.dg.Dg, data.dg.Copy())
+					}
 				}
 			}
 		}
+	}
+
+	// Because AstronGo is completely asynchronous, datagrams sent directly after a DistributedObject's
+	//  generate will often get lost. Because of this, we need a system which will store datagrams that
+	//  the channelmap could not find any recipients for and store them for the DO to use after generation.
+	//  Sadly, this still does not account for the edge case where something else is already listening to
+	//  the DO's channel, but this case is *extremely* unlikely and could only be done by a malicious attacker
+	//  with MD privileges-- even then, the results of not having datagrams replayed at generation are inconsequential.
+	if !found {
+		ReplayLock.Lock()
+		ReplayPool[ch] = append(ReplayPool[ch], *data.dg.Dg)
+		ReplayLock.Unlock()
+		go func() {
+			time.Sleep(1 * time.Second)
+			ReplayLock.Lock()
+			ReplayPool[ch] = nil
+			ReplayLock.Unlock()
+		}()
 	}
 
 	data.sendLock.Unlock()
@@ -463,10 +487,11 @@ func (c *ChannelMap) Send(ch Channel_t, data *MDDatagram) {
 			data.sendLock.Lock()
 			subs.(*SubscriptionMap).Range(func(iSub, _ interface{}) bool {
 				sub := iSub.(*Subscriber)
-				if (data.sender == nil || sub.participant.Subscriber() != data.sender.Subscriber()) &&
-					!data.HasSent(sub.participant.Subscriber()) {
-					data.sent = append(data.sent, sub.participant.Subscriber())
-					go sub.participant.HandleDatagram(*data.dg.Dg, data.dg.Copy())
+				if data.sender == nil || sub.participant.Subscriber() != data.sender.Subscriber() {
+					if !data.HasSent(sub.participant.Subscriber()) {
+						data.sent = append(data.sent, sub.participant.Subscriber())
+						sub.participant.HandleDatagram(*data.dg.Dg, data.dg.Copy())
+					}
 				}
 				return true
 			})
@@ -480,6 +505,7 @@ func (c *ChannelMap) Send(ch Channel_t, data *MDDatagram) {
 }
 
 func init() {
+	ReplayPool = make(map[Channel_t][]Datagram)
 	channelMap = &ChannelMap{}
 	channelMap.init()
 }

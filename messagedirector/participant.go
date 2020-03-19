@@ -37,9 +37,9 @@ type MDParticipantBase struct {
 	mu sync.Mutex
 }
 
-func (m *MDParticipantBase) Init() {
+func (m *MDParticipantBase) Init(handler MDParticipant) {
 	m.postRemoves = make(map[Channel_t][]Datagram)
-	m.subscriber = &Subscriber{participant: m, active: true}
+	m.subscriber = &Subscriber{participant: handler, active: true}
 	MD.participants = append(MD.participants, m)
 }
 
@@ -126,12 +126,10 @@ type MDNetworkParticipant struct {
 
 func NewMDParticipant(conn gonet.Conn) *MDNetworkParticipant {
 	participant := &MDNetworkParticipant{conn: conn}
-	participant.MDParticipantBase.Init()
+	participant.MDParticipantBase.Init(participant)
 	socket := net.NewSocketTransport(conn, 60*time.Second, 4096)
 
 	participant.client = net.NewClient(socket, participant, 60*time.Second)
-	participant.subscriber = &Subscriber{participant: participant, active: true}
-
 	return participant
 }
 

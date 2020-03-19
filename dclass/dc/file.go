@@ -59,7 +59,7 @@ func (f File) Class(n int) (t *Class, ok bool) {
 		return nil, false
 	}
 
-	return f.classes[n], ok
+	return f.classes[n], true
 }
 
 func (f *File) AddClass(class *Class) (err error) {
