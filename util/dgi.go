@@ -30,7 +30,7 @@ func NewDatagramIterator(dg *Datagram) *DatagramIterator {
 func (dgi *DatagramIterator) Copy() *DatagramIterator {
 	newDgi := NewDatagramIterator(dgi.Dg)
 	newDgi.Seek(dgi.Tell())
-	return dgi
+	return newDgi
 }
 
 func (dgi *DatagramIterator) panic(len int8) {
@@ -227,7 +227,7 @@ func (dgi *DatagramIterator) ReadDatagram() *Datagram {
 
 func (dgi *DatagramIterator) ReadData(length Dgsize_t) []uint8 {
 	buff := make([]uint8, int32(length))
-	if _, err := dgi.Read.Read(buff); err != nil {
+	if n, err := dgi.Read.Read(buff); err != nil || n != int(length) {
 		dgi.panic(int8(length))
 	}
 
@@ -284,7 +284,7 @@ func (dgi *DatagramIterator) UnpackDtype(dtype dc.BaseType, buffer *bytes.Buffer
 		len := dgi.ReadSize()
 
 		netlen := make([]byte, 4)
-		binary.BigEndian.PutUint32(netlen, uint32(len))
+		binary.LittleEndian.PutUint32(netlen, uint32(len))
 		buffer.Write(netlen)
 
 		if dtype.Type() == dc.T_VARARRAY {

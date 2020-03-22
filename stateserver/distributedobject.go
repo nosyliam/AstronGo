@@ -5,9 +5,9 @@ import (
 	"astrongo/messagedirector"
 	. "astrongo/util"
 	"bytes"
-	"encoding/hex"
 	"fmt"
 	"github.com/apex/log"
+	"sort"
 	"sync"
 )
 
@@ -55,16 +55,12 @@ func NewDistributedObject(ss *StateServer, doid Doid_t, parent Doid_t,
 		}),
 	}
 
-	do.Init(do)
-	do.SubscribeChannel(Channel_t(doid))
-
 	for i := 0; i < dclass.GetNumFields(); i++ {
 		field := dclass.GetField(i)
 		if field.HasKeyword("required") {
 			if _, ok := field.(*dc.MolecularField); ok {
 				continue
 			}
-
 			do.requiredFields[field] = dgi.UnpackFieldtoUint8(field)
 		}
 	}
@@ -89,25 +85,25 @@ func NewDistributedObject(ss *StateServer, doid Doid_t, parent Doid_t,
 		}
 	}
 
-	do.log.Debug("Object instantiated ...")
-	fmt.Printf("Generated %d\n", doid)
+	do.Init(do)
+	do.SubscribeChannel(Channel_t(doid))
 
+	do.log.Debug("Object instantiated ...")
+
+	do.Lock()
 	dgi.SeekPayload()
 	do.handleLocationChange(parent, zone, dgi.ReadChannel())
 	do.wakeChildren()
+	do.Unlock()
 
 	// Replay datagrams we may have missed while generating
 	if dgs, ok := messagedirector.ReplayPool[Channel_t(doid)]; ok {
 		for _, dg := range dgs {
-			fmt.Printf("Replay dump:\n%s\n", hex.Dump(dg.Bytes()))
 			dgi := NewDatagramIterator(&dg)
 			dgi.SeekPayload()
 			go do.HandleDatagram(dg, dgi)
 		}
 	}
-	messagedirector.ReplayLock.Lock()
-	messagedirector.ReplayPool[Channel_t(doid)] = nil
-	messagedirector.ReplayLock.Unlock()
 
 	return do
 }
@@ -139,6 +135,9 @@ func (d *DistributedObject) appendOtherData(dg Datagram, client bool, owner bool
 				broadcastFields = append(broadcastFields, field)
 			}
 		}
+		sort.Slice(broadcastFields, func(i, j int) bool {
+			return broadcastFields[i].Id() < broadcastFields[j].Id()
+		})
 
 		dg.AddUint16(uint16(len(broadcastFields)))
 		for _, field := range broadcastFields {
@@ -146,10 +145,18 @@ func (d *DistributedObject) appendOtherData(dg Datagram, client bool, owner bool
 			dg.AddData(d.ramFields[field])
 		}
 	} else {
-		dg.AddUint16(uint16(len(d.ramFields)))
-		for field, data := range d.ramFields {
+		var fields []dc.Field
+		for field, _ := range d.ramFields {
+			fields = append(fields, field)
+		}
+		sort.Slice(fields, func(i, j int) bool {
+			return fields[i].Id() < fields[j].Id()
+		})
+
+		dg.AddUint16(uint16(len(fields)))
+		for _, field := range fields {
 			dg.AddUint16(uint16(field.Id()))
-			dg.AddData(data)
+			dg.AddData(d.ramFields[field])
 		}
 	}
 }
@@ -244,7 +251,6 @@ func (d *DistributedObject) handleLocationChange(parent Doid_t, zone Zone_t, sen
 			d.SubscribeChannel(ParentToChildren(parent))
 			if !d.explicitAi {
 				// Retrieve parent AI
-				fmt.Printf("Sending GET_AI\n")
 				dg := NewDatagram()
 				dg.AddServerHeader(Channel_t(parent), Channel_t(d.do), STATESERVER_OBJECT_GET_AI)
 				dg.AddUint32(d.context)
@@ -259,6 +265,8 @@ func (d *DistributedObject) handleLocationChange(parent Doid_t, zone Zone_t, sen
 		d.zone = zone
 		targets = append(targets, Channel_t(d.parent))
 		targets = append(targets, LocationAsChannel(d.parent, d.zone))
+	} else {
+		return
 	}
 
 	// Broadcast location change message
@@ -294,7 +302,6 @@ func (d *DistributedObject) handleAiChange(ai Channel_t, sender Channel_t, expli
 
 	d.aiChannel = ai
 	d.explicitAi = explicit
-	fmt.Printf("AI changed to %d\n", d.aiChannel)
 
 	dg := NewDatagram()
 	dg.AddMultipleServerHeader(targets, sender, STATESERVER_OBJECT_CHANGING_AI)
@@ -398,7 +405,7 @@ func (d *DistributedObject) handleOneUpdate(dgi *DatagramIterator, sender Channe
 				fieldData := &bytes.Buffer{}
 				atomic := molecular.GetField(n)
 				dgi.UnpackField(atomic, fieldData)
-				d.saveField(field, fieldData.Bytes())
+				d.saveField(atomic, fieldData.Bytes())
 			}
 		} else {
 			d.saveField(field, data.Bytes())
@@ -475,6 +482,15 @@ func (d *DistributedObject) HandleDatagram(dg Datagram, dgi *DatagramIterator) {
 	d.Lock()
 	defer d.Unlock()
 
+	// Another function may have deferred already, but let's be safe
+	/*defer func() {
+		if r := recover(); r != nil {
+			if _, ok := r.(DatagramIteratorEOF); ok {
+				d.log.Errorf("Received truncated datagram")
+			}
+		}
+	}()*/
+
 	sender := dgi.ReadChannel()
 	msgType := dgi.ReadUint16()
 
@@ -522,6 +538,7 @@ func (d *DistributedObject) HandleDatagram(dg Datagram, dgi *DatagramIterator) {
 		d.log.Debugf("Received changing AI message from %d", parent)
 		if parent != d.parent {
 			d.log.Warnf("Received changing AI message from %d, but AI channel is %d", parent, d.parent)
+			return
 		}
 		if d.explicitAi {
 			break
@@ -530,8 +547,7 @@ func (d *DistributedObject) HandleDatagram(dg Datagram, dgi *DatagramIterator) {
 	case STATESERVER_OBJECT_SET_AI:
 		newChannel := dgi.ReadChannel()
 		d.log.Debugf("Changing AI channel to %d", newChannel)
-		fmt.Printf("Received AI change request; chan=%d, sender=%d\n", newChannel, sender)
-		d.handleAiChange(newChannel, sender, false)
+		d.handleAiChange(newChannel, sender, true)
 	case STATESERVER_OBJECT_GET_AI:
 		d.log.Debugf("Received AI query from %d", sender)
 		dg := NewDatagram()
@@ -581,7 +597,7 @@ func (d *DistributedObject) HandleDatagram(dg Datagram, dgi *DatagramIterator) {
 				}
 			}
 
-			d.zoneObjects[newZone] = []Doid_t{child}
+			d.zoneObjects[newZone] = append(d.zoneObjects[newZone], child)
 
 			dg := NewDatagram()
 			dg.AddServerHeader(Channel_t(child), Channel_t(d.do), STATESERVER_OBJECT_LOCATION_ACK)
@@ -641,6 +657,7 @@ func (d *DistributedObject) HandleDatagram(dg Datagram, dgi *DatagramIterator) {
 		}
 
 		dg = NewDatagram()
+		dg.AddServerHeader(sender, Channel_t(d.do), STATESERVER_OBJECT_GET_ALL_RESP)
 		dg.AddUint32(context)
 		d.appendRequiredData(dg, false, false)
 		d.appendOtherData(dg, false, false)
@@ -670,14 +687,17 @@ func (d *DistributedObject) HandleDatagram(dg Datagram, dgi *DatagramIterator) {
 		}
 		fieldCount := dgi.ReadUint16()
 
-		requestedFields := make(map[uint16]bool)
+		var requestedFields []uint16
 		for n := 0; n < int(fieldCount); n++ {
 			fieldId := dgi.ReadUint16()
-			requestedFields[fieldId] = true
+			requestedFields = append(requestedFields, fieldId)
 		}
+		sort.Slice(requestedFields, func(i, j int) bool {
+			return requestedFields[i] < requestedFields[j]
+		})
 
 		success, found, fields := true, 0, NewDatagram()
-		for fieldId, _ := range requestedFields {
+		for _, fieldId := range requestedFields {
 			sz := fields.Len()
 			if !d.handleOneGet(&fields, fieldId, true, false) {
 				success = false
@@ -752,7 +772,7 @@ func (d *DistributedObject) HandleDatagram(dg Datagram, dgi *DatagramIterator) {
 			childCount := 0
 
 			dg := NewDatagram()
-			dg.AddServerHeader(ParentToChildren(d.do), Channel_t(sender), STATESERVER_OBJECT_GET_ZONES_OBJECTS)
+			dg.AddServerHeader(ParentToChildren(d.do), sender, STATESERVER_OBJECT_GET_ZONES_OBJECTS)
 			dg.AddUint32(context)
 			dg.AddDoid(queriedParent)
 			dg.AddUint16(uint16(zoneCount))
@@ -764,6 +784,7 @@ func (d *DistributedObject) HandleDatagram(dg Datagram, dgi *DatagramIterator) {
 			}
 
 			countDg := NewDatagram()
+			countDg.AddServerHeader(sender, Channel_t(d.do), STATESERVER_OBJECT_GET_ZONES_COUNT_RESP)
 			countDg.AddUint32(context)
 			countDg.AddDoid(Doid_t(childCount))
 			d.RouteDatagram(countDg)
@@ -779,6 +800,9 @@ func (d *DistributedObject) HandleDatagram(dg Datagram, dgi *DatagramIterator) {
 		for zone, _ := range d.zoneObjects {
 			zones = append(zones, zone)
 		}
+		sort.Slice(zones, func(i, j int) bool {
+			return zones[i] < zones[j]
+		})
 
 		dg := NewDatagram()
 		dg.AddServerHeader(sender, Channel_t(d.do), STATESERVER_GET_ACTIVE_ZONES_RESP)

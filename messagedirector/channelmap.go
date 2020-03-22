@@ -483,20 +483,18 @@ func (c *ChannelMap) SubscribeChannel(p *Subscriber, ch Channel_t) {
 
 func (c *ChannelMap) Send(ch Channel_t, data *MDDatagram) {
 	if subs, ok := c.subscriptions.Load(ch); ok {
-		go func() {
-			data.sendLock.Lock()
-			subs.(*SubscriptionMap).Range(func(iSub, _ interface{}) bool {
-				sub := iSub.(*Subscriber)
-				if data.sender == nil || sub.participant.Subscriber() != data.sender.Subscriber() {
-					if !data.HasSent(sub.participant.Subscriber()) {
-						data.sent = append(data.sent, sub.participant.Subscriber())
-						sub.participant.HandleDatagram(*data.dg.Dg, data.dg.Copy())
-					}
+		data.sendLock.Lock()
+		subs.(*SubscriptionMap).Range(func(iSub, _ interface{}) bool {
+			sub := iSub.(*Subscriber)
+			if data.sender == nil || sub.participant.Subscriber() != data.sender.Subscriber() {
+				if !data.HasSent(sub.participant.Subscriber()) {
+					data.sent = append(data.sent, sub.participant.Subscriber())
+					go sub.participant.HandleDatagram(*data.dg.Dg, data.dg.Copy())
 				}
-				return true
-			})
-			data.sendLock.Unlock()
-		}()
+			}
+			return true
+		})
+		data.sendLock.Unlock()
 	} else {
 		// Default to range lookup
 		c.ranges.Send(ch, data)

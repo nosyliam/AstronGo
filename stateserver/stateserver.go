@@ -75,13 +75,13 @@ func (s *StateServer) handleDelete(dgi *DatagramIterator, sender Channel_t) {
 }
 
 func (s *StateServer) HandleDatagram(dg Datagram, dgi *DatagramIterator) {
-	/*defer func() {
-		if r  := recover(); r != nil {
+	defer func() {
+		if r := recover(); r != nil {
 			if _, ok := r.(DatagramIteratorEOF); ok {
 				s.log.Errorf("Received truncated datagram")
 			}
 		}
-	}()*/
+	}()
 
 	sender := dgi.ReadChannel()
 	msgType := dgi.ReadUint16()
@@ -94,8 +94,7 @@ func (s *StateServer) HandleDatagram(dg Datagram, dgi *DatagramIterator) {
 	case STATESERVER_DELETE_AI_OBJECTS:
 		s.handleDelete(dgi, sender)
 	default:
-		fmt.Printf("Received message\n")
-		//s.log.Warnf("Received unknown msgtype=%d", msgType)
+		s.log.Warnf("Received unknown msgtype=%d", msgType)
 	}
 }
 

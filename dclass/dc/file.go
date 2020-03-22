@@ -59,7 +59,12 @@ func (f File) Class(n int) (t *Class, ok bool) {
 		return nil, false
 	}
 
-	return f.classes[n], true
+	cls, ok := f.types[n].(*Class)
+	if !ok {
+		return nil, false
+	}
+
+	return cls, true
 }
 
 func (f *File) AddClass(class *Class) (err error) {

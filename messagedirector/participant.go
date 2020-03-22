@@ -3,7 +3,6 @@ package messagedirector
 import (
 	"astrongo/net"
 	. "astrongo/util"
-	"errors"
 	gonet "net"
 	"sync"
 	"time"
@@ -106,12 +105,7 @@ func (m *MDParticipantBase) Cleanup() {
 
 	m.PostRemove()
 	channelMap.UnsubscribeAll(m.subscriber)
-
-	for n, participant := range MD.participants {
-		if participant == m {
-			MD.participants = append(MD.participants[:n], MD.participants[n+1:]...)
-		}
-	}
+	MD.RemoveParticipant(m)
 }
 
 func (m *MDParticipantBase) Terminate(err error) { /* virtual */ }
@@ -122,6 +116,7 @@ type MDNetworkParticipant struct {
 
 	client *net.Client
 	conn   gonet.Conn
+	mu     sync.Mutex
 }
 
 func NewMDParticipant(conn gonet.Conn) *MDNetworkParticipant {
@@ -138,7 +133,8 @@ func (m *MDNetworkParticipant) HandleDatagram(dg Datagram, dgi *DatagramIterator
 }
 
 func (m *MDNetworkParticipant) ReceiveDatagram(dg Datagram) {
-	defer func() {
+	m.mu.Lock()
+	/*defer func() {
 		if r := recover(); r != nil {
 			if _, ok := r.(DatagramIteratorEOF); ok {
 				m.Terminate(errors.New("MDNetworkParticipant received a truncated datagram"))
@@ -146,7 +142,7 @@ func (m *MDNetworkParticipant) ReceiveDatagram(dg Datagram) {
 				m.Terminate(r.(error))
 			}
 		}
-	}()
+	}()*/
 
 	dgi := NewDatagramIterator(&dg)
 	channels := dgi.ReadUint8()
@@ -175,10 +171,12 @@ func (m *MDNetworkParticipant) ReceiveDatagram(dg Datagram) {
 		default:
 			MDLog.Errorf("MDNetworkParticipant got unknown control message with message type: %d", msg)
 		}
+		m.mu.Unlock()
 		return
 	}
 
 	m.RouteDatagram(dg)
+	m.mu.Unlock()
 }
 
 func (m *MDNetworkParticipant) Terminate(err error) {

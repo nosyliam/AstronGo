@@ -9,6 +9,7 @@ import (
 	gonet "net"
 	"os"
 	"os/signal"
+	"sync"
 )
 
 // Maximum number of datagrams that can be added to the MD queue.
@@ -18,6 +19,7 @@ var MDLog *log.Entry
 var MD *MessageDirector
 
 type MessageDirector struct {
+	sync.Mutex
 	net.Server
 	net.NetworkServer
 
@@ -179,4 +181,14 @@ func (m *MessageDirector) RecallPostRemoves(sender Channel_t) {
 		dg.AddChannel(sender)
 		m.upstream.HandleDatagram(dg, nil)
 	}
+}
+
+func (m *MessageDirector) RemoveParticipant(p MDParticipant) {
+	m.Lock()
+	for n, participant := range MD.participants {
+		if participant == p {
+			MD.participants = append(MD.participants[:n], MD.participants[n+1:]...)
+		}
+	}
+	m.Unlock()
 }

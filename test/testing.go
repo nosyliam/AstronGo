@@ -30,32 +30,32 @@ const (
 
 const (
 	// DistributedTestObject1
-	setRequired1 uint16 = iota
-	setB1
+	SetRequired1 uint16 = iota
+	SetB1
 	SetBA1
-	setBR1
-	setBRA1
-	setBRO1
+	SetBR1
+	SetBRA1
+	SetBRO1
 
 	// DistributedTestObject2
 	SetB2
 	setBRam2
 
 	// DistributedTestObject3
-	setDb3
-	setRDB3
+	SetDb3
+	SetRDB3
 	setADb3
 
 	// DistributedTestObject4
-	setX
+	SetX
 	setY
-	setUnrelated
+	SetUnrelated
 	setZ
-	setXyz
-	setOne
-	setTwo
-	setThree
-	set123
+	SetXyz
+	SetOne
+	SetTwo
+	SetThree
+	Set123
 
 	// DistributedTestObject5
 	setRDbD5
@@ -83,9 +83,9 @@ const (
 	blockZ
 
 	// DistributedChunk
-	blockList
-	lastBlock
-	newBlock
+	BlockList
+	LastBlock
+	NewBlock
 
 	// DistributedDBTypeTestObject
 	db_uint8
@@ -246,6 +246,7 @@ func (d *TestDatagram) AssertEquals(other *TestDatagram, t *testing.T, client bo
 
 		if msgTypeExpected, msgTypeReceived := d.ReadUint16(), other.ReadUint16(); msgTypeExpected != msgTypeReceived {
 			t.Errorf("Datagram assertion failed: msg type, %d != %d", msgTypeExpected, msgTypeReceived)
+			panic("")
 		}
 
 		if !reflect.DeepEqual(other.ReadRemainder(), d.ReadRemainder()) {
@@ -437,6 +438,8 @@ func (c *TestMDConnection) ExpectMany(t *testing.T, datagrams []Datagram, client
 
 		if found {
 			matched++
+		} else {
+			fmt.Printf("Received (#%d) non-matching datagram:\n%s\n", received, hex.Dump(recv.Bytes()))
 		}
 	}
 
