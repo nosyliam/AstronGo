@@ -6,6 +6,7 @@ import (
 	"astrongo/dclass/dc"
 	"astrongo/eventlogger"
 	"astrongo/messagedirector"
+	"astrongo/util"
 	"fmt"
 	"github.com/apex/log"
 	"github.com/spf13/pflag"
@@ -115,6 +116,21 @@ Revision: INDEV`)
 	mainLog.Info(fmt.Sprintf("DC hash: 0x%x", hasher.Hash()))
 	eventlogger.StartEventLogger()
 	messagedirector.Start()
+
+	// Configure UberDOG list
+	for _, ud := range core.Config.Uberdogs {
+		class, ok := core.DC.ClassByName(ud.Class)
+		if !ok {
+			mainLog.Fatalf("For UberDOG %d, class %s does not exist!", ud.ID, ud.Class)
+			return
+		}
+
+		core.Uberdogs = append(core.Uberdogs, core.Uberdog{
+			Anonymous: ud.Anonymous,
+			Id:        util.Doid_t(ud.ID),
+			Class:     class,
+		})
+	}
 
 	// Instantiate roles
 	for _, role := range core.Config.Roles {

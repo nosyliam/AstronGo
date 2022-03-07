@@ -1,6 +1,8 @@
 package core
 
 import (
+	"astrongo/dclass/dc"
+	"astrongo/util"
 	"errors"
 	"fmt"
 	"github.com/spf13/viper"
@@ -9,6 +11,14 @@ import (
 var Config *ServerConfig
 var Hash uint32
 var StopChan chan bool // For test purposes
+
+type Uberdog struct {
+	Anonymous bool
+	Id        util.Doid_t
+	Class     *dc.Class
+}
+
+var Uberdogs []Uberdog
 
 type Role struct {
 	Type string
@@ -46,7 +56,7 @@ type ServerConfig struct {
 	Uberdogs []struct {
 		ID        int
 		Class     string
-		Anonymous string
+		Anonymous bool
 	}
 	MessageDirector struct {
 		Bind    string

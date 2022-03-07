@@ -1,14 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="f6337163-8d31-42cb-a1f0-0625bad660b3" name="Default" comment="MD: finish MD">
+    <list default="true" id="f6337163-8d31-42cb-a1f0-0625bad660b3" name="Default" comment="stateserver: finish all code">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messagedirector/channelmap_test.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/clientagent/astronclient.go" beforeDir="false" afterPath="$PROJECT_DIR$/clientagent/astronclient.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/clientagent/client.go" beforeDir="false" afterPath="$PROJECT_DIR$/clientagent/client.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/config.go" beforeDir="false" afterPath="$PROJECT_DIR$/core/config.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/main/main.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/messagedirector/participant.go" beforeDir="false" afterPath="$PROJECT_DIR$/messagedirector/participant.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/messagedirector/upstream_test.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/net/client.go" beforeDir="false" afterPath="$PROJECT_DIR$/net/client.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/net/socket.go" beforeDir="false" afterPath="$PROJECT_DIR$/net/socket.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/net/transport.go" beforeDir="false" afterPath="$PROJECT_DIR$/net/transport.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/stateserver/distributedobject.go" beforeDir="false" afterPath="$PROJECT_DIR$/stateserver/distributedobject.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/stateserver/stateserver.go" beforeDir="false" afterPath="$PROJECT_DIR$/stateserver/stateserver.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/util/msgtypes.go" beforeDir="false" afterPath="$PROJECT_DIR$/util/msgtypes.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -40,7 +45,7 @@
       </list>
     </option>
   </component>
-  <component name="GOROOT" path="C:\Go" />
+  <component name="GOROOT" url="file://C:/Program Files/Go" />
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
@@ -52,22 +57,30 @@
       </list>
     </option>
   </component>
+  <component name="MarkdownSettingsMigration">
+    <option name="stateVersion" value="1" />
+  </component>
   <component name="ProjectId" id="1QhDxLyAp53QSeQZQ5lPzJ6dQzr" />
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
-    <option name="showExcludedFiles" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
   <component name="PropertiesComponent">
+    <property name="ASKED_ADD_EXTERNAL_FILES" value="true" />
     <property name="DefaultGoTemplateProperty" value="Go File" />
     <property name="GO_FMT" value="true" />
+    <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
+    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="configurable.Global.GOPATH.is.expanded" value="true" />
     <property name="configurable.Module.GOPATH.is.expanded" value="true" />
     <property name="configurable.Project.GOPATH.is.expanded" value="true" />
+    <property name="go.formatter.settings.were.checked" value="true" />
     <property name="go.gopath.indexing.explicitly.defined" value="true" />
     <property name="go.import.settings.migrated" value="true" />
+    <property name="go.modules.go.list.on.any.changes.was.set" value="true" />
+    <property name="go.sdk.automatically.set" value="true" />
     <property name="go.tried.to.enable.integration.vgo.integrator" value="true" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
     <property name="node.js.detected.package.eslint" value="true" />
@@ -79,7 +92,8 @@
     <property name="nodejs_interpreter_path.stuck_in_default_project" value="undefined stuck path" />
     <property name="nodejs_npm_path_reset_for_default_project" value="true" />
     <property name="nodejs_package_manager_path" value="npm" />
-    <property name="settings.editor.selected.configurable" value="coverage" />
+    <property name="settings.editor.selected.configurable" value="com.goide.configuration.GoLibrariesConfigurableProvider" />
+    <property name="vue.rearranger.settings.migration" value="true" />
   </component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
@@ -95,109 +109,138 @@
       <module name="astrongo" />
       <working_directory value="$PROJECT_DIR$/" />
       <go_parameters value="-i" />
-      <framework value="gotest" />
       <kind value="PACKAGE" />
       <package value="astrongo/messagedirector" />
       <directory value="$PROJECT_DIR$/" />
       <filePath value="$PROJECT_DIR$/" />
+      <framework value="gotest" />
       <method v="2" />
     </configuration>
     <configuration name="Net" type="GoTestRunConfiguration" factoryName="Go Test">
       <module name="astrongo" />
       <working_directory value="$PROJECT_DIR$/" />
       <go_parameters value="-i" />
-      <framework value="gotest" />
       <kind value="PACKAGE" />
       <package value="astrongo/net" />
       <directory value="$PROJECT_DIR$/" />
       <filePath value="$PROJECT_DIR$/" />
+      <framework value="gotest" />
       <method v="2" />
     </configuration>
     <configuration name="Parser" type="GoTestRunConfiguration" factoryName="Go Test">
       <module name="astrongo" />
       <working_directory value="$PROJECT_DIR$/" />
       <go_parameters value="-i" />
-      <framework value="gotest" />
       <kind value="PACKAGE" />
       <package value="astrongo/dclass/parse" />
       <directory value="$PROJECT_DIR$/" />
       <filePath value="$PROJECT_DIR$/" />
+      <framework value="gotest" />
+      <method v="2" />
+    </configuration>
+    <configuration name="Stateserver" type="GoTestRunConfiguration" factoryName="Go Test">
+      <module name="astrongo" />
+      <working_directory value="$PROJECT_DIR$/" />
+      <go_parameters value="-i" />
+      <kind value="PACKAGE" />
+      <package value="astrongo/stateserver" />
+      <directory value="$PROJECT_DIR$/" />
+      <filePath value="$PROJECT_DIR$/" />
+      <framework value="gotest" />
       <method v="2" />
     </configuration>
     <configuration name="TestMD_PostRemove in astrongo/messagedirector" type="GoTestRunConfiguration" factoryName="Go Test" nameIsGenerated="true">
       <module name="astrongo" />
       <working_directory value="$PROJECT_DIR$/messagedirector" />
-      <framework value="gotest" />
       <kind value="PACKAGE" />
       <package value="astrongo/messagedirector" />
       <directory value="$PROJECT_DIR$/" />
       <filePath value="$PROJECT_DIR$/" />
+      <framework value="gotest" />
       <pattern value="^TestMD_PostRemove$" />
       <method v="2" />
     </configuration>
     <configuration name="TestMD_Ranges in astrongo/messagedirector" type="GoTestRunConfiguration" factoryName="Go Test" nameIsGenerated="true">
       <module name="astrongo" />
       <working_directory value="$PROJECT_DIR$/messagedirector" />
-      <framework value="gotest" />
       <kind value="PACKAGE" />
       <package value="astrongo/messagedirector" />
       <directory value="$PROJECT_DIR$/" />
       <filePath value="$PROJECT_DIR$/" />
+      <framework value="gotest" />
       <pattern value="^TestMD_Ranges$" />
       <method v="2" />
     </configuration>
     <configuration name="TestNetworkServer_Listen in astrongo/net" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
       <module name="astrongo" />
       <working_directory value="$PROJECT_DIR$/net" />
-      <framework value="gotest" />
       <kind value="PACKAGE" />
       <package value="astrongo/net" />
       <directory value="$PROJECT_DIR$/" />
       <filePath value="$PROJECT_DIR$/" />
+      <framework value="gotest" />
       <pattern value="^TestNetworkServer_Listen$" />
+      <method v="2" />
+    </configuration>
+    <configuration name="TestStateServer_Ram in astrongo/stateserver" type="GoTestRunConfiguration" factoryName="Go Test" nameIsGenerated="true">
+      <module name="astrongo" />
+      <working_directory value="$PROJECT_DIR$/stateserver" />
+      <kind value="PACKAGE" />
+      <package value="astrongo/stateserver" />
+      <directory value="$PROJECT_DIR$/" />
+      <filePath value="$PROJECT_DIR$/" />
+      <framework value="gotest" />
+      <pattern value="^TestStateServer_Ram$" />
+      <method v="2" />
+    </configuration>
+    <configuration name="TestStateServer_SetAI in astrongo/stateserver" type="GoTestRunConfiguration" factoryName="Go Test" nameIsGenerated="true">
+      <module name="astrongo" />
+      <working_directory value="$PROJECT_DIR$/stateserver" />
+      <kind value="PACKAGE" />
+      <package value="astrongo/stateserver" />
+      <directory value="$PROJECT_DIR$/" />
+      <filePath value="$PROJECT_DIR$/" />
+      <framework value="gotest" />
+      <pattern value="^TestStateServer_SetAI$" />
       <method v="2" />
     </configuration>
     <configuration name="Util" type="GoTestRunConfiguration" factoryName="Go Test">
       <module name="astrongo" />
       <working_directory value="$PROJECT_DIR$/" />
       <go_parameters value="-i" />
-      <framework value="gotest" />
       <kind value="PACKAGE" />
       <package value="astrongo/util" />
       <directory value="$PROJECT_DIR$/" />
       <filePath value="$PROJECT_DIR$/" />
+      <framework value="gotest" />
       <method v="2" />
     </configuration>
-    <list>
-      <item itemvalue="Go Test.Util" />
-      <item itemvalue="Go Test.MD" />
-      <item itemvalue="Go Test.Parser" />
-      <item itemvalue="Go Test.Net" />
-      <item itemvalue="Go Test.TestMD_PostRemove in astrongo/messagedirector" />
-      <item itemvalue="Go Test.TestMD_Ranges in astrongo/messagedirector" />
-      <item itemvalue="Go Test.TestNetworkServer_Listen in astrongo/net" />
-    </list>
-    <recent_temporary>
-      <list>
-        <item itemvalue="Go Test.TestNetworkServer_Listen in astrongo/net" />
-      </list>
-    </recent_temporary>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="project-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <created>1646690238494</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1646690238494</updated>
+      <workItem from="1646690239934" duration="1000" />
+    </task>
+    <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
-    <option name="version" value="1" />
+    <option name="version" value="3" />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
     <option name="TAB_STATES">
       <map>
         <entry key="MAIN">
           <value>
-            <State>
-              <option name="COLUMN_ORDER" />
-            </State>
+            <State />
           </value>
         </entry>
       </map>
     </option>
+    <option name="oldMeFiltersMigrated" value="true" />
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="dclass: further implement class/file interactions" />
@@ -210,7 +253,10 @@
     <MESSAGE value="MD: completely revamp channelmap, implement more testing" />
     <MESSAGE value="MD: various bugfixes &amp; postremove testing" />
     <MESSAGE value="MD: finish MD" />
-    <option name="LAST_COMMIT_MESSAGE" value="MD: finish MD" />
+    <MESSAGE value="stateserver: finish all code" />
+    <MESSAGE value="stateserver: begin testing" />
+    <MESSAGE value="stateserver: finish unit testing &amp; associated bugfixes! SS is fully finished :)" />
+    <option name="LAST_COMMIT_MESSAGE" value="stateserver: finish unit testing &amp; associated bugfixes! SS is fully finished :)" />
   </component>
   <component name="WindowStateProjectService">
     <state x="552" y="181" key="#GOPATH" timestamp="1584294945929">
@@ -225,18 +271,26 @@
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
     <state x="686" y="188" key="#TestMD_Ranges_in_astrongo/messagedirector/1920.1.1920.1040/0.0.1920.1040@0.0.1920.1040" timestamp="1584412871742" />
-    <state x="414" y="178" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1584492524927">
+    <state x="686" y="188" key="#TestStateServer_Ram_in_astrongo/stateserver" timestamp="1584640248157">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
-    <state x="414" y="178" key="#com.intellij.execution.impl.EditConfigurationsDialog/1920.1.1920.1040/0.0.1920.1040@0.0.1920.1040" timestamp="1584492524927" />
-    <state x="1129" y="223" key="#xdebugger.evaluate" timestamp="1584408001963">
+    <state x="686" y="188" key="#TestStateServer_Ram_in_astrongo/stateserver/1920.1.1920.1040/0.0.1920.1040@0.0.1920.1040" timestamp="1584640248157" />
+    <state x="686" y="188" key="#TestStateServer_SetAI_in_astrongo/stateserver" timestamp="1584571478471">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
-    <state x="1129" y="223" key="#xdebugger.evaluate/1920.1.1920.1040/0.0.1920.1040@0.0.1920.1040" timestamp="1584408001963" />
-    <state x="627" y="118" key="CommitChangelistDialog2" timestamp="1584491669089">
+    <state x="686" y="188" key="#TestStateServer_SetAI_in_astrongo/stateserver/1920.1.1920.1040/0.0.1920.1040@0.0.1920.1040" timestamp="1584571478471" />
+    <state x="414" y="178" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1584571473244">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
-    <state x="627" y="118" key="CommitChangelistDialog2/1920.1.1920.1040/0.0.1920.1040@0.0.1920.1040" timestamp="1584491669089" />
+    <state x="414" y="178" key="#com.intellij.execution.impl.EditConfigurationsDialog/1920.1.1920.1040/0.0.1920.1040@0.0.1920.1040" timestamp="1584571473244" />
+    <state x="868" y="458" width="778" height="582" key="#xdebugger.evaluate" timestamp="1584582244160">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state x="868" y="458" width="778" height="582" key="#xdebugger.evaluate/1920.1.1920.1040/0.0.1920.1040@0.0.1920.1040" timestamp="1584582244160" />
+    <state x="627" y="118" key="CommitChangelistDialog2" timestamp="1584911080419">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state x="627" y="118" key="CommitChangelistDialog2/1920.1.1920.1040/0.0.1920.1040@0.0.1920.1040" timestamp="1584911080419" />
     <state x="184" y="86" key="DiffContextDialog" timestamp="1584491685484">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
@@ -245,73 +299,68 @@
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
     <state x="740" y="264" key="FileChooserDialogImpl/1920.1.1920.1040/0.0.1920.1040@0.0.1920.1040" timestamp="1584294929477" />
-    <state width="1877" height="174" key="GridCell.Tab.0.bottom" timestamp="1584492728210">
+    <state width="1877" height="232" key="GridCell.Tab.0.bottom" timestamp="1585177031994">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
-    <state width="1877" height="174" key="GridCell.Tab.0.bottom/1920.1.1920.1040/0.0.1920.1040@0.0.1920.1040" timestamp="1584492728210" />
+    <state width="1877" height="232" key="GridCell.Tab.0.bottom/1920.1.1920.1040/0.0.1920.1040@0.0.1920.1040" timestamp="1585177031994" />
     <state width="1877" height="174" key="GridCell.Tab.0.bottom/1920.1.1920.1040/0.0.1920.1040@1920.1.1920.1040" timestamp="1584409967479" />
-    <state width="1877" height="174" key="GridCell.Tab.0.center" timestamp="1584492728210">
+    <state width="1877" height="232" key="GridCell.Tab.0.center" timestamp="1585177031994">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
-    <state width="1877" height="174" key="GridCell.Tab.0.center/1920.1.1920.1040/0.0.1920.1040@0.0.1920.1040" timestamp="1584492728210" />
+    <state width="1877" height="232" key="GridCell.Tab.0.center/1920.1.1920.1040/0.0.1920.1040@0.0.1920.1040" timestamp="1585177031994" />
     <state width="1877" height="174" key="GridCell.Tab.0.center/1920.1.1920.1040/0.0.1920.1040@1920.1.1920.1040" timestamp="1584409967479" />
-    <state width="1877" height="174" key="GridCell.Tab.0.left" timestamp="1584492728210">
+    <state width="1877" height="232" key="GridCell.Tab.0.left" timestamp="1585177031994">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
-    <state width="1877" height="174" key="GridCell.Tab.0.left/1920.1.1920.1040/0.0.1920.1040@0.0.1920.1040" timestamp="1584492728210" />
+    <state width="1877" height="232" key="GridCell.Tab.0.left/1920.1.1920.1040/0.0.1920.1040@0.0.1920.1040" timestamp="1585177031994" />
     <state width="1877" height="174" key="GridCell.Tab.0.left/1920.1.1920.1040/0.0.1920.1040@1920.1.1920.1040" timestamp="1584409967479" />
-    <state width="1877" height="174" key="GridCell.Tab.0.right" timestamp="1584492728210">
+    <state width="1877" height="232" key="GridCell.Tab.0.right" timestamp="1585177031994">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
-    <state width="1877" height="174" key="GridCell.Tab.0.right/1920.1.1920.1040/0.0.1920.1040@0.0.1920.1040" timestamp="1584492728210" />
+    <state width="1877" height="232" key="GridCell.Tab.0.right/1920.1.1920.1040/0.0.1920.1040@0.0.1920.1040" timestamp="1585177031994" />
     <state width="1877" height="174" key="GridCell.Tab.0.right/1920.1.1920.1040/0.0.1920.1040@1920.1.1920.1040" timestamp="1584409967479" />
-    <state width="1877" height="232" key="GridCell.Tab.1.bottom" timestamp="1584480160455">
+    <state width="1877" height="232" key="GridCell.Tab.1.bottom" timestamp="1585177031995">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
-    <state width="1877" height="232" key="GridCell.Tab.1.bottom/1920.1.1920.1040/0.0.1920.1040@0.0.1920.1040" timestamp="1584480160455" />
+    <state width="1877" height="232" key="GridCell.Tab.1.bottom/1920.1.1920.1040/0.0.1920.1040@0.0.1920.1040" timestamp="1585177031995" />
     <state width="1877" height="348" key="GridCell.Tab.1.bottom/1920.1.1920.1040/0.0.1920.1040@1920.1.1920.1040" timestamp="1584409952092" />
-    <state width="1877" height="232" key="GridCell.Tab.1.center" timestamp="1584480160455">
+    <state width="1877" height="232" key="GridCell.Tab.1.center" timestamp="1585177031994">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
-    <state width="1877" height="232" key="GridCell.Tab.1.center/1920.1.1920.1040/0.0.1920.1040@0.0.1920.1040" timestamp="1584480160455" />
+    <state width="1877" height="232" key="GridCell.Tab.1.center/1920.1.1920.1040/0.0.1920.1040@0.0.1920.1040" timestamp="1585177031994" />
     <state width="1877" height="348" key="GridCell.Tab.1.center/1920.1.1920.1040/0.0.1920.1040@1920.1.1920.1040" timestamp="1584409952091" />
-    <state width="1877" height="232" key="GridCell.Tab.1.left" timestamp="1584480160455">
+    <state width="1877" height="232" key="GridCell.Tab.1.left" timestamp="1585177031994">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
-    <state width="1877" height="232" key="GridCell.Tab.1.left/1920.1.1920.1040/0.0.1920.1040@0.0.1920.1040" timestamp="1584480160455" />
+    <state width="1877" height="232" key="GridCell.Tab.1.left/1920.1.1920.1040/0.0.1920.1040@0.0.1920.1040" timestamp="1585177031994" />
     <state width="1877" height="348" key="GridCell.Tab.1.left/1920.1.1920.1040/0.0.1920.1040@1920.1.1920.1040" timestamp="1584409952091" />
-    <state width="1877" height="232" key="GridCell.Tab.1.right" timestamp="1584480160455">
+    <state width="1877" height="232" key="GridCell.Tab.1.right" timestamp="1585177031995">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
-    <state width="1877" height="232" key="GridCell.Tab.1.right/1920.1.1920.1040/0.0.1920.1040@0.0.1920.1040" timestamp="1584480160455" />
+    <state width="1877" height="232" key="GridCell.Tab.1.right/1920.1.1920.1040/0.0.1920.1040@0.0.1920.1040" timestamp="1585177031995" />
     <state width="1877" height="348" key="GridCell.Tab.1.right/1920.1.1920.1040/0.0.1920.1040@1920.1.1920.1040" timestamp="1584409952092" />
-    <state x="331" y="187" key="SettingsEditor" timestamp="1584492313402">
+    <state x="331" y="187" key="SettingsEditor" timestamp="1586507633092">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
-    <state x="331" y="187" key="SettingsEditor/1920.1.1920.1040/0.0.1920.1040@0.0.1920.1040" timestamp="1584492313402" />
-    <state x="552" y="256" key="Vcs.Push.Dialog.v2" timestamp="1584491687682">
+    <state x="331" y="187" key="SettingsEditor/1920.1.1920.1040/0.0.1920.1040@0.0.1920.1040" timestamp="1586507633092" />
+    <state x="552" y="256" key="Vcs.Push.Dialog.v2" timestamp="1584911086607">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
-    <state x="552" y="256" key="Vcs.Push.Dialog.v2/1920.1.1920.1040/0.0.1920.1040@0.0.1920.1040" timestamp="1584491687682" />
-    <state x="667" y="154" width="737" height="732" key="find.popup" timestamp="1584411728135">
+    <state x="552" y="256" key="Vcs.Push.Dialog.v2/1920.1.1920.1040/0.0.1920.1040@0.0.1920.1040" timestamp="1584911086607" />
+    <state x="667" y="154" width="796" height="732" key="find.popup" timestamp="1585076013808">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
-    <state x="667" y="154" width="737" height="732" key="find.popup/1920.1.1920.1040/0.0.1920.1040@0.0.1920.1040" timestamp="1584411728135" />
-    <state x="623" y="225" width="672" height="678" key="search.everywhere.popup" timestamp="1584386029117">
+    <state x="667" y="154" width="796" height="732" key="find.popup/1920.1.1920.1040/0.0.1920.1040@0.0.1920.1040" timestamp="1585076013808" />
+    <state x="623" y="225" width="672" height="678" key="search.everywhere.popup" timestamp="1584854101589">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
-    <state x="623" y="225" width="672" height="678" key="search.everywhere.popup/1920.1.1920.1040/0.0.1920.1040@0.0.1920.1040" timestamp="1584386029117" />
+    <state x="623" y="225" width="672" height="678" key="search.everywhere.popup/1920.1.1920.1040/0.0.1920.1040@0.0.1920.1040" timestamp="1584854101589" />
   </component>
   <component name="XDebuggerManager">
-    <breakpoint-manager>
-      <default-breakpoints>
-        <breakpoint type="DlvErrorBreakpoint" />
-      </default-breakpoints>
-    </breakpoint-manager>
-  </component>
-  <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/astrongo$TestMD_PostRemove_in_astrongo_messagedirector.out" NAME="TestMD_PostRemove in astrongo/messagedirector Coverage Results" MODIFIED="1584492323762" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="GoCoverage" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" />
-    <SUITE FILE_PATH="coverage/astrongo$TestMD_Ranges_in_astrongo_messagedirector.out" NAME="TestMD_Ranges in astrongo/messagedirector Coverage Results" MODIFIED="1584492533356" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="GoCoverage" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" />
-    <SUITE FILE_PATH="coverage/astrongo$MD.out" NAME="MD Coverage Results" MODIFIED="1584492565869" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="GoCoverage" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" />
+    <watches-manager>
+      <configuration name="GoTestRunConfiguration">
+        <watch expression="*(*&quot;net.TCPConn&quot;)(824636670424)" />
+      </configuration>
+    </watches-manager>
   </component>
 </project>

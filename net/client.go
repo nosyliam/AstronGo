@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	gonet "net"
 	"sync"
 	"time"
 )
@@ -28,10 +29,18 @@ type Client struct {
 	handler DatagramHandler
 	buff    bytes.Buffer
 	timeout time.Duration
+
+	remote *gonet.TCPAddr
+	local  *gonet.TCPAddr
 }
 
 func NewClient(tr Transport, handler DatagramHandler, timeout time.Duration) *Client {
-	client := &Client{tr: tr, handler: handler}
+	client := &Client{
+		tr:      tr,
+		handler: handler,
+		remote:  tr.Conn().RemoteAddr().(*gonet.TCPAddr),
+		local:   tr.Conn().LocalAddr().(*gonet.TCPAddr),
+	}
 	client.initialize()
 	client.timeout = timeout
 	return client
@@ -144,4 +153,20 @@ func (c *Client) Local() bool {
 
 func (c *Client) Connected() bool {
 	return !c.tr.Closed()
+}
+
+func (c *Client) RemoteIP() string {
+	return c.remote.IP.String()
+}
+
+func (c *Client) RemotePort() uint16 {
+	return uint16(c.remote.Port)
+}
+
+func (c *Client) LocalIP() string {
+	return c.local.IP.String()
+}
+
+func (c *Client) LocalPort() uint16 {
+	return uint16(c.local.Port)
 }

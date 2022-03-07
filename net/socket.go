@@ -56,6 +56,10 @@ func (s *socketTransport) Closed() bool {
 	return s.closed
 }
 
+func (s *socketTransport) Conn() net.Conn {
+	return s.conn
+}
+
 // Flush writes any buffered data to the underlying io.Writer.
 func (s *socketTransport) Flush() chan error {
 	errChan := make(chan error)

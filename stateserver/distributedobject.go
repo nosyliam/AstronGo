@@ -482,14 +482,13 @@ func (d *DistributedObject) HandleDatagram(dg Datagram, dgi *DatagramIterator) {
 	d.Lock()
 	defer d.Unlock()
 
-	// Another function may have deferred already, but let's be safe
-	/*defer func() {
+	defer func() {
 		if r := recover(); r != nil {
 			if _, ok := r.(DatagramIteratorEOF); ok {
 				d.log.Errorf("Received truncated datagram")
 			}
 		}
-	}()*/
+	}()
 
 	sender := dgi.ReadChannel()
 	msgType := dgi.ReadUint16()

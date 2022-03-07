@@ -20,12 +20,12 @@ for development milestones, however, this is a basic in-order list of components
 3) Client
     - Research and Development
     - Architecture Redesign and Implementation
-4) Unit Testing (by June 2020)
+4) Unit Testing
 5) StateServer
 6) Database
 
 
 ## Contributing
 
-Currently, AstronGo is a passion project by Liam (me). If you have any questions about the project
-or would like to contribute to it's development please contact me on Discord at **liam#0002**. Thank you :)
+This project is currently dormant as I am working full-time on [AutoML](https://modela.ai). I will probably complete the
+development of AstronGO when I have more free time to work on passion projects.  

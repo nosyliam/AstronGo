@@ -97,9 +97,3 @@ func (s *StateServer) HandleDatagram(dg Datagram, dgi *DatagramIterator) {
 		s.log.Warnf("Received unknown msgtype=%d", msgType)
 	}
 }
-
-func (s *StateServer) ReceiveDatagram(dg Datagram) {}
-
-func (s *StateServer) Terminate(err error) {
-
-}

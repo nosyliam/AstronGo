@@ -5,6 +5,7 @@ package net
 import (
 	"astrongo/util"
 	"io"
+	"net"
 )
 
 // Transport represents a stream transport mechanism.
@@ -17,5 +18,9 @@ type Transport interface {
 	// Flush writes any buffered data to the underlying io.Writer.
 	Flush() chan error
 
+	// Closed returns if the transport is closed or not
 	Closed() bool
+
+	// Conn returns the transports underlying connection
+	Conn() net.Conn
 }
